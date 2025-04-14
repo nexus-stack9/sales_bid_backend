@@ -2,8 +2,8 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
-const { config } = require("./config");
-const db = require("./db");
+const { config } = require("./config/config");
+const db = require("./db/database");
 
 const app = express();
 
@@ -14,7 +14,7 @@ app.use(morgan("dev"));
 app.use(express.json());
 
 // Routes
-app.use("/api", require("./routes"));
+app.use("/api", require("./routes/router"));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
