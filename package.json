@@ -9,31 +9,43 @@
     "test": "jest"
   },
   "dependencies": {
-    "pg": "^8.11.3",
-    "cors": "^2.8.5",
-    "helmet": "^7.1.0",
     "@google-cloud/storage": "^7.14.0",
     "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
     "crypto": "^1.0.1",
-    "dotenv": "^16.4.7",
+    "crypto-js": "^4.2.0",
+    "dotenv": "^16.5.0",
     "express": "^4.21.2",
     "express-session": "^1.18.1",
     "google-auth-library": "^9.15.0",
     "googleapis": "^144.0.0",
+    "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
+    "mime-types": "^2.1.35",
     "morgan": "^1.10.0",
     "nodemon": "^3.1.7",
-    "mime-types": "^2.1.35"
-
+    "pg": "^8.15.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2",
-    "jest": "^29.7.0"
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2"
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nexus-stack9/sales_bid_backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/nexus-stack9/sales_bid_backend/issues"
+  },
+  "homepage": "https://github.com/nexus-stack9/sales_bid_backend#readme"
 }
