@@ -95,6 +95,7 @@ const signin = async (req, res) => {
   }
 };
 
+
 function decryptPassword(encryptedPassword) {
   const secretKey = process.env.SECRET_KEY;
   const bytes = CryptoJS.AES.decrypt(encryptedPassword, secretKey);

@@ -17,7 +17,8 @@ app.use(bodyParser.json());
 // Routes
 app.use("/api", require("./routes/router"));
 app.use('/auth', require('./routes/loginRoutes'));
-
+app.use('/password', require('./routes/passwordResetRoutes')); // Add password reset routes
+app.use('/profile', require('./routes/profileRoutes')); 
 
 // Error handling middleware
 app.use((err, req, res, next) => {
