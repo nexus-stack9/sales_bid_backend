@@ -1,0 +1,66 @@
+{
+
+    "vendorForm": {
+        "ui_labels": {
+            "vendor_id": "Vendor ID",
+            "vendor_name": "Vendor Name",
+            "vendor_email": "Vendor Email",
+            "vendor_phone": "Vendor Phone",
+            "vendor_address": "Vendor Address",
+            "status": "Status",
+            "category": "Category"
+        },
+        "ui_columns": {
+            "vendor_id": "vendor_id",
+            "vendor_name": "vendor_name",
+            "vendor_email": "email",
+            "vendor_phone": "phone_number",
+            "vendor_address": "address",
+            "status": "status",
+            "category": "category"
+        },
+        "table_name": "sb_vendors",
+        "view_name": "vw_sb_vendors"
+    },    
+        "productForm": {
+            "ui_labels": {
+                "product_id": "Product ID",
+                "seller_id": "Seller ID",
+                "product_name": "Product Name",
+                "product_description": "Product Description",
+                "starting_price": "Starting Price",
+                "category_id": "Category ID",
+                "auction_start": "Auction Start",
+                "auction_end": "Auction End",
+                "product_status": "Product Status",
+                "created_at": "Created At",
+                "retail_value": "Retail Value",
+                "location": "Location",
+                "shipping": "Shipping",
+                "quantity": "Quantity",
+                "image_path": "Image Path"
+            },
+            "ui_columns": {
+                "product_id": "product_id",
+                "seller_id": "seller_id",
+                "product_name": "name",
+                "product_description": "description",
+                "starting_price": "starting_price",
+                "category_id": "category_id",
+                "auction_start": "auction_start",
+                "auction_end": "auction_end",
+                "product_status": "status",
+                "created_at": "created_at",
+                "retail_value": "retail_value",
+                "location": "location",
+                "shipping": "shipping",
+                "quantity": "quantity",
+                "image_path": "image_path"
+            },
+            "table_name": "sb_products",
+            "view_name": "vw_sb_products"
+        }
+
+
+
+}
