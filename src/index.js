@@ -30,6 +30,7 @@ app.use(bodyParser.json());
 // Routes
 app.use("/api", require("./routes/router"));
 app.use('/auth', require('./routes/loginRoutes'));
+app.use('/file', require('./routes/fileRoutes'));
 app.use('/password', require('./routes/passwordResetRoutes')); // Add password reset routes
 app.use('/profile', require('./routes/profileRoutes')); 
 app.use('/bids', require('./routes/BidsRoute'));

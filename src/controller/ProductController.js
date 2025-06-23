@@ -3,6 +3,7 @@ const db = require('../db/database');
 // Store active connections and their intervals
 const activeConnections = new Map();
 
+// WebSocket functionality for real-time product updates
 const initProductWebSocket = (wss) => {
     wss.on('connection', (ws, req) => {
         // Get the product_id from the URL query parameters
@@ -113,6 +114,204 @@ const initProductWebSocket = (wss) => {
     });
 };
 
+// API Controllers for Products
+
+// Get all products
+const getAllProducts = async (req, res) => {
+    try {
+        const query = 'SELECT * FROM view_products_with_bid_stats';
+        const result = await db.query(query);
+        
+        res.status(200).json({
+            success: true,
+            count: result.rows.length,
+            data: result.rows
+        });
+    } catch (error) {
+        console.error('Error fetching products:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch products',
+            error: error.message
+        });
+    }
+};
+
+// Get product by UID
+const getProductByUid = async (req, res) => {
+    try {
+        const { uid } = req.params;
+        
+        if (!uid) {
+            return res.status(400).json({
+                success: false,
+                message: 'Product UID is required'
+            });
+        }
+        
+        const query = 'SELECT * FROM view_products_with_bid_stats WHERE product_id = $1';
+        const result = await db.query(query, [uid]);
+        
+        if (!result.rows || result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found'
+            });
+        }
+        
+        res.status(200).json({
+            success: true,
+            data: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Error fetching product by UID:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch product',
+            error: error.message
+        });
+    }
+};
+
+// API Controllers for Wishlist
+
+// Add product to wishlist
+const addToWishlist = async (req, res) => {
+    try {
+        const { user_id, product_id } = req.body;
+        
+        if (!user_id || !product_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'User ID and Product ID are required'
+            });
+        }
+        
+        // Check if the product exists
+        const productQuery = 'SELECT * FROM products WHERE product_id = $1';
+        const productResult = await db.query(productQuery, [product_id]);
+        
+        if (!productResult.rows || productResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found'
+            });
+        }
+        
+        // Check if the item is already in the wishlist
+        const checkQuery = 'SELECT * FROM user_watchlist WHERE user_id = $1 AND product_id = $2';
+        const checkResult = await db.query(checkQuery, [user_id, product_id]);
+        
+        if (checkResult.rows && checkResult.rows.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Product already in wishlist'
+            });
+        }
+        
+        // Add to wishlist
+        const insertQuery = 'INSERT INTO user_watchlist (user_id, product_id, added_at) VALUES ($1, $2, NOW()) RETURNING *';
+        const result = await db.query(insertQuery, [user_id, product_id]);
+        
+        res.status(201).json({
+            success: true,
+            message: 'Product added to wishlist',
+            data: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Error adding to wishlist:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to add product to wishlist',
+            error: error.message
+        });
+    }
+};
+
+// Remove product from wishlist
+const removeFromWishlist = async (req, res) => {
+    try {
+        const { user_id, product_id } = req.body;
+        
+        if (!user_id || !product_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'User ID and Product ID are required'
+            });
+        }
+        
+        // Check if the item is in the wishlist
+        const checkQuery = 'SELECT * FROM user_watchlist WHERE user_id = $1 AND product_id = $2';
+        const checkResult = await db.query(checkQuery, [user_id, product_id]);
+        
+        if (!checkResult.rows || checkResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found in wishlist'
+            });
+        }
+        
+        // Remove from wishlist
+        const deleteQuery = 'DELETE FROM user_watchlist WHERE user_id = $1 AND product_id = $2 RETURNING *';
+        const result = await db.query(deleteQuery, [user_id, product_id]);
+        
+        res.status(200).json({
+            success: true,
+            message: 'Product removed from wishlist',
+            data: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Error removing from wishlist:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to remove product from wishlist',
+            error: error.message
+        });
+    }
+};
+
+   // Get wishlist by user ID
+const getWishlistByUserId = async (req, res) => {
+    try {
+        const { user_id } = req.params;
+        
+        if (!user_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'User ID is required'
+            });
+        }
+        
+        // Get wishlist with product details
+        const query = `
+            SELECT w.*, p.* 
+            FROM wishlist w
+            JOIN vw_get_product_details p ON w.product_id = p.product_id
+            WHERE w.user_id = $1
+            ORDER BY w.created_at DESC
+        `;
+        const result = await db.query(query, [user_id]);
+        
+        res.status(200).json({
+            success: true,
+            count: result.rows.length,
+            data: result.rows
+        });
+    } catch (error) {
+        console.error('Error fetching wishlist:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch wishlist',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
-    initProductWebSocket
+    initProductWebSocket,
+    getAllProducts,
+    getProductByUid,
+    addToWishlist,
+    removeFromWishlist,
+    getWishlistByUserId
 };
