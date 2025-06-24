@@ -35,7 +35,7 @@ app.use('/password', require('./routes/passwordResetRoutes')); // Add password r
 app.use('/profile', require('./routes/profileRoutes')); 
 app.use('/bids', require('./routes/BidsRoute'));
 app.use("/global", require("./routes/globalRoutes"));
-
+app.use("/wishlist", require("./routes/WishlistRoute"));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

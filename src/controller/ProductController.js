@@ -270,48 +270,11 @@ const removeFromWishlist = async (req, res) => {
     }
 };
 
-   // Get wishlist by user ID
-const getWishlistByUserId = async (req, res) => {
-    try {
-        const { user_id } = req.params;
-        
-        if (!user_id) {
-            return res.status(400).json({
-                success: false,
-                message: 'User ID is required'
-            });
-        }
-        
-        // Get wishlist with product details
-        const query = `
-            SELECT w.*, p.* 
-            FROM wishlist w
-            JOIN vw_get_product_details p ON w.product_id = p.product_id
-            WHERE w.user_id = $1
-            ORDER BY w.created_at DESC
-        `;
-        const result = await db.query(query, [user_id]);
-        
-        res.status(200).json({
-            success: true,
-            count: result.rows.length,
-            data: result.rows
-        });
-    } catch (error) {
-        console.error('Error fetching wishlist:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to fetch wishlist',
-            error: error.message
-        });
-    }
-};
+
 
 module.exports = {
     initProductWebSocket,
     getAllProducts,
     getProductByUid,
     addToWishlist,
-    removeFromWishlist,
-    getWishlistByUserId
-};
+    removeFromWishlist};

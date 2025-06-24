@@ -4,6 +4,14 @@ require('dotenv').config();
 const CryptoJS = require("crypto-js");
 const jwt = require('jsonwebtoken');
 
+function encryptPassword(password) {
+  const secretKey = process.env.SECRET_KEY;
+  if (!secretKey) {
+    throw new Error('SECRET_KEY is not configured');
+  }
+  return CryptoJS.AES.encrypt(password, secretKey).toString();
+}
+
 const registerUser = async (req, res) => {
   const { firstName, lastName, email, phone, password } = req.body;
 
@@ -12,6 +20,8 @@ const registerUser = async (req, res) => {
   }
 
   try {
+    // Encrypt the password before storing
+    // const encryptedPassword = encryptPassword(password);
 
     const result = await db.query(
       `INSERT INTO users (first_name, last_name, email, phone, password_hash)
@@ -53,13 +63,17 @@ const signin = async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
 
-    // Decrypt both passwords
+    // Decrypt the stored password and compare with plain password
     const decryptedDbPassword = decryptPassword(user.password_hash);
-    const decryptedPassword = decryptPassword(password);
-
     console.log("decryptedDbPassword:", decryptedDbPassword);
+    
+    if (!decryptedDbPassword) {
+      return res.status(500).json({ error: 'Error processing credentials' });
+    }
+    console.log(decryptPassword(decryptedDbPassword));
+    const decryptedPassword = decryptPassword(password);
     console.log("decryptedPassword:", decryptedPassword);
-
+    
     const isValidPassword = decryptedDbPassword === decryptedPassword;
     console.log("isValidPassword:", isValidPassword);
 
@@ -97,9 +111,22 @@ const signin = async (req, res) => {
 
 
 function decryptPassword(encryptedPassword) {
-  const secretKey = process.env.SECRET_KEY;
-  const bytes = CryptoJS.AES.decrypt(encryptedPassword, secretKey);
-  return bytes.toString(CryptoJS.enc.Utf8);
+  try {
+    const secretKey = process.env.SECRET_KEY;
+    if (!secretKey) {
+      console.error('SECRET_KEY is not configured');
+      return null;
+    }
+    if (!encryptedPassword) {
+      console.error('No encrypted password provided');
+      return null;
+    }
+    const bytes = CryptoJS.AES.decrypt(encryptedPassword, secretKey);
+    return bytes.toString(CryptoJS.enc.Utf8);
+  } catch (error) {
+    console.error('Decryption error:', error);
+    return null;
+  }
 }
 
 module.exports = { registerUser, signin };
