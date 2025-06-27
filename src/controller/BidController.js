@@ -3,6 +3,24 @@ const CryptoJS = require('crypto-js');
 const multer = require('multer');
 require('dotenv').config();
 
+const userBids = async (req, res) => {
+    try {
+        const { bidder_id } = req.params;
+
+        if (!bidder_id) {
+            return res.status(400).json({ error: 'bidder_id is required' });
+        }
+
+        const query = 'SELECT * FROM user_bids WHERE bidder_id = $1';
+        const result = await pool.query(query, [bidder_id]);
+        
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error('Error fetching user bids:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
 const insertBid = async (req, res) => {
     try {
         const { product_id, bidder_id, bid_amount, is_auto_bid } = req.body;
@@ -41,6 +59,7 @@ const insertBid = async (req, res) => {
 };
 
 module.exports = {
-    insertBid
+    insertBid,
+    userBids
 };
 
