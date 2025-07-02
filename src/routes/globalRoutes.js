@@ -4,7 +4,8 @@ const {
   getAllRecords, 
   getRecordById, 
   insertRecord, 
-  deleteRecord 
+  deleteRecord ,
+  updateRecord
 } = require('../controller/globalController');
 // const authMiddleware = require('../middleware/authMiddleware');
 
@@ -12,15 +13,17 @@ const {
 // router.use(authMiddleware);
 
 // Get all records for a form
-router.get('/getAllProducts', getAllRecords);
+router.get('/getAllRecords', getAllRecords);
 
 // Get a record by ID for a form
-router.get('/getById/:id', getRecordById);
+router.get('/getById', getRecordById);
 
 // Insert a new record for a form
 router.post('/insert', insertRecord);
 
 // Delete a record by ID for a form
-router.post('/delete/:id', deleteRecord);
+router.delete('/delete', deleteRecord);
+
+router.put('/update', updateRecord);
 
 module.exports = router;

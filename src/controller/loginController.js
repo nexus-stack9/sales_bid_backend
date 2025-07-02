@@ -115,6 +115,72 @@ const signin = async (req, res) => {
   }
 };
 
+const vendorSignin = async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required.' });
+  }
+
+  try {
+    const result = await db.query(
+      'SELECT * FROM sb_vendors WHERE email = $1',
+      [email]
+    );
+
+    const user = result.rows[0];
+
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+
+    // Decrypt the stored password and compare with plain password
+    const decryptedDbPassword = decryptPassword(user.password);
+    console.log("decryptedDbPassword:", decryptedDbPassword);
+    
+    if (!decryptedDbPassword) {
+      return res.status(500).json({ error: 'Error processing credentials' });
+    }
+    console.log(decryptPassword(decryptedDbPassword));
+    const decryptedPassword = decryptPassword(password);
+    console.log("decryptedPassword:", decryptedPassword);
+    
+    const isValidPassword = decryptedDbPassword === decryptedPassword;
+    console.log("isValidPassword:", isValidPassword);
+
+    if (!isValidPassword) {
+      return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+
+    const token = jwt.sign(
+      {
+        vendorId: user.vendor_id,
+        email: user.email,
+        role: user.role,
+        name: user.vendor_name
+      },
+      process.env.JWT_SECRET_KEY,
+      { expiresIn: '24h' }
+    );
+
+    res.status(200).json({
+      message: 'Login successful',
+      token,
+      user: {
+        userId: user.user_id,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        role: user.role
+      }
+    });
+
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+};
+
 
 function decryptPassword(encryptedPassword) {
   try {
@@ -177,9 +243,21 @@ const loginWithGoogle = async (req, res) => {
         });
       }
 
-      // Generate tokens
-      const accessToken = generateAccessToken(user.id, user.name);
-      const refreshToken = generateRefreshToken(user.id, user.name);
+      // Generate tokens for the existing user
+      const accessToken = jwt.sign(
+        {
+          userId: user.user_id,
+          email: user.email,
+        },
+        process.env.JWT_SECRET_KEY,
+        { expiresIn: '1h' }
+      );
+
+      const refreshToken = jwt.sign(
+        { userId: user.user_id },
+        process.env.JWT_SECRET_KEY,
+        { expiresIn: '7d' }
+      );
 
       return res.status(200).json({
         success: true,
@@ -198,7 +276,17 @@ const loginWithGoogle = async (req, res) => {
       ]);
 
       const userId = result.rows[0].user_id;
-      const token = jwt.sign(
+      const accessToken = jwt.sign(
+        {
+          userId: user.user_id,
+          email: user.email,
+          role: user.role
+        },
+        process.env.JWT_SECRET_KEY,
+        { expiresIn: '24h' }
+      );
+
+      const refreshToken = jwt.sign(
         {
           userId: user.user_id,
           email: user.email,
@@ -226,4 +314,4 @@ const loginWithGoogle = async (req, res) => {
 };
 
 
-module.exports = { registerUser, signin, loginWithGoogle };
+module.exports = { registerUser, signin, loginWithGoogle, vendorSignin };
