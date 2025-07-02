@@ -103,8 +103,7 @@ const getAllRecords = async (req, res) => {
  * @param {Object} res - Express response object
  */
 const getRecordById = async (req, res) => {
-  const { formName } = req.body;
-  const { id } = req.params;
+  const { formName, id } = req.query;
   
   if (!formName) {
     return res.status(400).json({
@@ -177,15 +176,19 @@ const insertRecord = async (req, res) => {
     const formConfig = getFormConfig(formName);
     const { table_name, ui_columns } = formConfig;
     
+    // Get primary key from form config
+    const primaryKey = formConfig.primary_key;
+    
     // Prepare columns and values for insertion
     const columns = [];
     const values = [];
     const placeholders = [];
     let paramIndex = 1;
     
-    // Map request data to database columns
+    // Map request data to database columns, skipping the primary key
     Object.entries(ui_columns).forEach(([uiField, dbColumn]) => {
-      if (formData[uiField] !== undefined) {
+      // Skip if this is the primary key field or if the value is undefined
+      if (dbColumn !== primaryKey && formData[uiField] !== undefined) {
         columns.push(dbColumn);
         values.push(formData[uiField]);
         placeholders.push(`$${paramIndex}`);
@@ -232,13 +235,12 @@ const insertRecord = async (req, res) => {
  * @param {Object} res - Express response object
  */
 const deleteRecord = async (req, res) => {
-  const { formName } = req.body;
-  const { id } = req.params;
+  const { formName, id } = req.query;
   
-  if (!formName) {
+  if (!formName || !id) {
     return res.status(400).json({
       success: false,
-      message: 'formName is required in the request body'
+      message: 'Both formName and id are required as query parameters'
     });
   }
   
@@ -280,9 +282,89 @@ const deleteRecord = async (req, res) => {
   }
 };
 
+/**
+ * Update a record for a specific form
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+const updateRecord = async (req, res) => {
+  const { formName, id, ...formData } = req.body;
+  
+  if (!formName || id === undefined) {
+    return res.status(400).json({
+      success: false,
+      message: 'Both formName and id are required in the request body'
+    });
+  }
+  
+  try {
+    // Get form configuration
+    const formConfig = getFormConfig(formName);
+    const { table_name, ui_columns, primary_key } = formConfig;
+    
+    // Prepare SET clause for the update query
+    const setClauses = [];
+    const values = [];
+    let paramIndex = 1;
+    
+    // Map request data to database columns
+    Object.entries(ui_columns).forEach(([uiField, dbColumn]) => {
+      // Skip if this is the primary key field or if the value is undefined
+      if (dbColumn !== primary_key && formData[uiField] !== undefined) {
+        setClauses.push(`${dbColumn} = $${paramIndex}`);
+        values.push(formData[uiField]);
+        paramIndex++;
+      }
+    });
+    
+    if (setClauses.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No valid fields provided for update'
+      });
+    }
+    
+    // Add the ID as the last parameter
+    values.push(id);
+    
+    // Build and execute query
+    const query = `
+      UPDATE ${table_name}
+      SET ${setClauses.join(', ')}
+      WHERE ${primary_key} = $${paramIndex}
+      RETURNING *
+    `;
+    
+    const result = await db.query(query, values);
+    
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Record not found or no changes made'
+      });
+    }
+    
+    // Format response data
+    const formattedData = formatResponseData([result.rows[0]], formConfig.ui_labels, formConfig.ui_columns);
+    
+    res.status(200).json({
+      success: true,
+      message: 'Record updated successfully',
+      data: formattedData[0]
+    });
+  } catch (error) {
+    console.error(`Error updating ${formName} record:`, error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error'
+    });
+  }
+};
+
 module.exports = {
   getAllRecords,
   getRecordById,
   insertRecord,
-  deleteRecord
+  deleteRecord,
+  updateRecord
 };

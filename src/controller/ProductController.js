@@ -173,6 +173,81 @@ const getProductByUid = async (req, res) => {
     }
 };
 
+// Add a new product
+const addProduct = async (req, res) => {
+    try {
+        const {
+            name,
+            description,
+            starting_price,
+            category_id,
+            auction_start,
+            auction_end,
+            retail_value,
+            location,
+            shipping,
+            quantity,
+            image_path,
+            created_by,
+            vendor_id,
+            trending,
+            tags
+        } = req.body;
+
+        // Validate required fields
+        if (!name || !starting_price || !auction_start || !auction_end) {
+            return res.status(400).json({
+                success: false,
+                message: 'Name, starting price, auction start, and auction end are required fields'
+            });
+        }
+
+        // Insert the new product
+        const query = `
+            INSERT INTO products (
+                name, description, starting_price, category_id,
+                auction_start, auction_end, retail_value, location,
+                shipping, quantity, image_path, created_by, vendor_id, trending, tags
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+            RETURNING *
+        `;
+
+        const values = [
+            name,
+            description || null,
+            starting_price,
+            category_id || null,
+            auction_start,
+            auction_end,
+            retail_value || null,
+            location || null,
+            shipping || null,
+            quantity || null,
+            image_path || null,
+            created_by || null,
+            vendor_id || null,
+            trending || false,
+            tags || null
+        ];
+
+        const result = await db.query(query, values);
+
+        return res.status(201).json({
+            success: true,
+            message: 'Product added successfully',
+            data: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error('Error adding product:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to add product',
+            error: error.message
+        });
+    }
+};
+
 // API Controllers for Wishlist
 
 // Add product to wishlist
@@ -276,5 +351,8 @@ module.exports = {
     initProductWebSocket,
     getAllProducts,
     getProductByUid,
+    addProduct,
     addToWishlist,
-    removeFromWishlist};
+    removeFromWishlist,
+    activeConnections // Export for cleanup on server shutdown
+};

@@ -36,6 +36,7 @@ app.use('/profile', require('./routes/profileRoutes'));
 app.use('/bids', require('./routes/BidsRoute'));
 app.use("/global", require("./routes/globalRoutes"));
 app.use("/wishlist", require("./routes/WishlistRoute"));
+app.use("/file", require("./routes/fileRoutes"));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

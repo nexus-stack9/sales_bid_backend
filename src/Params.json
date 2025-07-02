@@ -2,30 +2,30 @@
 
     "vendorForm": {
         "ui_labels": {
-            "vendor_id": "Vendor ID",
-            "vendor_name": "Vendor Name",
-            "vendor_email": "Vendor Email",
-            "vendor_phone": "Vendor Phone",
-            "vendor_address": "Vendor Address",
+            "id": "Vendor ID",
+            "name": "Vendor Name",
+            "email": "Vendor Email",
+            "contact": "Vendor Phone",
+            "address": "Vendor Address",
             "status": "Status",
             "category": "Category"
         },
         "ui_columns": {
-            "vendor_id": "vendor_id",
-            "vendor_name": "vendor_name",
-            "vendor_email": "email",
-            "vendor_phone": "phone_number",
-            "vendor_address": "address",
+            "id": "vendor_id",
+            "name": "vendor_name",
+            "email": "email",
+            "contact": "phone_number",
+            "address": "address",
             "status": "status",
             "category": "category"
         },
         "table_name": "sb_vendors",
-        "view_name": "vw_sb_vendors"
+        "primary_key": "vendor_id"
     },    
         "productForm": {
             "ui_labels": {
                 "product_id": "Product ID",
-                "seller_id": "Seller ID",
+                "vendor_id": "Vendor ID",
                 "product_name": "Product Name",
                 "product_description": "Product Description",
                 "starting_price": "Starting Price",
@@ -38,11 +38,14 @@
                 "location": "Location",
                 "shipping": "Shipping",
                 "quantity": "Quantity",
-                "image_path": "Image Path"
+                "image_path": "Image Path",
+                "created_by": "Created By",
+                "trending": "Trending",
+                "tags": "Tags"
             },
             "ui_columns": {
                 "product_id": "product_id",
-                "seller_id": "seller_id",
+                "vendor_id": "vendor_id",
                 "product_name": "name",
                 "product_description": "description",
                 "starting_price": "starting_price",
@@ -55,10 +58,14 @@
                 "location": "location",
                 "shipping": "shipping",
                 "quantity": "quantity",
-                "image_path": "image_path"
+                "image_path": "image_path",
+                "created_by": "created_by",
+                "trending": "trending",
+                "tags": "tags"
             },
             "table_name": "sb_products",
-            "view_name": "vw_sb_products"
+            "view_name": "vw_sb_products",
+            "primary_key": "product_id"
         }
 
 
