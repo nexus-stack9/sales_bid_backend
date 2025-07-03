@@ -97,7 +97,45 @@ const checkWishlistItem = async (req, res) => {
 };
 
    // Get wishlist by user ID
-   const getWishlistByUserId = async (req, res) => {
+   /**
+ * Get wishlist details for a specific user from vw_user_wishlist view
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+const getUserWishlistDetails = async (req, res) => {
+    try {
+        // Get user_id from the JWT payload (assuming it's set by auth middleware)
+        const { user_id } = req.params;
+        
+        if (!user_id) {
+            return res.status(400).json({ error: 'User ID is required' });
+        }
+
+        const query = `
+            SELECT * FROM vw_user_wishlist 
+            WHERE user_id = $1
+            ORDER BY created_at DESC
+        `;
+        
+        const result = await db.query(query, [user_id]);
+        
+        res.status(200).json({
+            success: true,
+            count: result.rows.length,
+            data: result.rows
+        });
+    } catch (error) {
+        console.error('Error fetching user wishlist details:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Internal server error',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
+// Get wishlist by user ID
+const getWishlistByUserId = async (req, res) => {
     try {
         const { user_id } = req.params;
         
@@ -137,5 +175,6 @@ module.exports = {
     addWishlistItem,
     deleteWishlistItem,
     checkWishlistItem,
+    getUserWishlistDetails,
     getWishlistByUserId
 };

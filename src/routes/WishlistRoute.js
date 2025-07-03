@@ -1,6 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { addWishlistItem, deleteWishlistItem, checkWishlistItem, getWishlistByUserId } = require('../controller/WishlistController');
+const { 
+    addWishlistItem, 
+    deleteWishlistItem, 
+    checkWishlistItem, 
+    getWishlistByUserId,
+    getUserWishlistDetails 
+} = require('../controller/WishlistController');
 
 /**
  * @route   POST /api/wishlist/addToWishlist
@@ -25,6 +31,13 @@ router.delete('/removeFromWishlist', deleteWishlistItem);
  * @returns {Object} Object with exists (boolean) and item (wishlist item or null)
  */
 router.post('/checkWishlistItem', checkWishlistItem);
-router.get('/getWishlist/:user_id', getWishlistByUserId);
+router.get('/getWishlist/:user_id', getUserWishlistDetails);
+
+/**
+ * @route   GET /api/wishlist/user-wishlist
+ * @desc    Get detailed wishlist information for the authenticated user
+ * @access  Private
+ */
+router.get('/user-wishlist', getUserWishlistDetails);
 
 module.exports = router;
