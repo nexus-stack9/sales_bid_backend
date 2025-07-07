@@ -94,7 +94,7 @@ const signin = async (req, res) => {
         role: user.role
       },
       process.env.JWT_SECRET_KEY,
-      { expiresIn: '24h' }
+      { expiresIn: '7d' }
     );
 
     res.status(200).json({

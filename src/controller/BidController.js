@@ -39,7 +39,10 @@ const insertBid = async (req, res) => {
         const values = [product_id, bidder_id, bid_amount, is_auto_bid || false];
         
         const result = await pool.query(query, values);
-        res.status(201).json(result.rows[0]);
+        res.status(201).json({
+            ...result.rows[0],
+            message: 'Bid placed successfully'
+        });
     } catch (error) {
         // Check for unique constraint violation
         if (error.code === '23505') {
