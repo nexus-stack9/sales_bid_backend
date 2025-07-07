@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { check } = require('express-validator');
 const multer = require('multer');
-const { updateProfile, updatePassword, getProfileDetails } = require('../controller/profileController');
+const { updateProfile, updatePassword, getProfileDetails, getUserCounts } = require('../controller/profileController');
 const authMiddleware = require('../middleware/authMiddleware');
 
 // Configure multer for memory storage
@@ -44,5 +44,7 @@ router.put('/update', authMiddleware, upload.single('profilePicture'), profileVa
 
 // Route to update user password
 router.put('/update-password', authMiddleware, passwordValidation, updatePassword);
+
+router.get('/userCounts/:user_id', getUserCounts);
 
 module.exports = router;

@@ -207,8 +207,60 @@ function decryptPassword(encryptedPassword) {
   return bytes.toString(CryptoJS.enc.Utf8);
 }
 
+const getUserCounts = async (req, res) => {
+  try {
+      const { user_id } = req.params;
+      
+      if (!user_id) {
+          return res.status(400).json({
+              success: false,
+              message: 'User ID is required'
+          });
+      }
+
+      const query = `
+ SELECT
+COUNT(w.product_id) AS wishlist_count,
+(
+  SELECT COUNT(DISTINCT b.product_id)
+  FROM bids b
+  WHERE b.bidder_id = $1
+) AS bids_count
+FROM wishlist w
+WHERE w.user_id = $1;
+
+      `;
+
+      const result = await pool.query(query, [user_id]);
+
+      if (result.rows.length === 0) {
+          return res.status(200).json({
+              success: true,
+              data: {
+                  wishlist_count: 0,
+                  bids_count: 0
+              }
+          });
+      }
+
+      res.status(200).json({
+          success: true,
+          data: result.rows[0]
+      });
+
+  } catch (error) {
+      console.error('Error fetching user counts:', error);
+      res.status(500).json({
+          success: false,
+          message: 'Failed to fetch user counts',
+          error: error.message
+      });
+  }
+};
+
 module.exports = {
   updateProfile,
   updatePassword,
-  getProfileDetails
+  getProfileDetails,
+  getUserCounts
 };

@@ -346,7 +346,6 @@ const removeFromWishlist = async (req, res) => {
 };
 
 
-
 module.exports = {
     initProductWebSocket,
     getAllProducts,
