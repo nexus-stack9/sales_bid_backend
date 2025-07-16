@@ -3,7 +3,12 @@ const { config } = require("../config/config");
 
 class Database {
   constructor() {
-    this.pool = new Pool(config.db);
+    this.pool = new Pool({
+      ...config.db,
+      max: 100,                   
+      idleTimeoutMillis: 10000,   
+      connectionTimeoutMillis: 2000, 
+    });
   }
 
   async connect() {

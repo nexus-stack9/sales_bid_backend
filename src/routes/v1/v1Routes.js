@@ -6,7 +6,7 @@ const productRoutes = require("../ProductRoute");
 // API routes
 router.get("/", (req, res) => {
   res.json({
-    message: "Welcome to B-Stock API v1",
+    message: "Welcome to SalesBid API v1",
     version: "1.0.0",
   });
 });

@@ -114,12 +114,10 @@ const initProductWebSocket = (wss) => {
     });
 };
 
-// API Controllers for Products
-
 // Get all products
 const getAllProducts = async (req, res) => {
     try {
-        const query = 'SELECT * FROM view_products_with_bid_stats';
+        const query = 'SELECT * FROM vw_products_with_bid_stats';
         const result = await db.query(query);
         
         res.status(200).json({
