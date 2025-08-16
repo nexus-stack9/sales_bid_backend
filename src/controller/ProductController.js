@@ -117,13 +117,42 @@ const initProductWebSocket = (wss) => {
 // Get all products
 const getAllProducts = async (req, res) => {
     try {
-        const query = 'SELECT * FROM vw_products_with_bid_stats';
-        const result = await db.query(query);
-        
+        // Extract pagination parameters from query string
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const offset = (page - 1) * limit;
+
+        // Get total count for pagination metadata
+        const countQuery = 'SELECT COUNT(*) FROM vw_products_with_bid_stats';
+        const countResult = await db.query(countQuery);
+        const totalRecords = parseInt(countResult.rows[0].count);
+
+        // Get paginated data
+        const query = `
+            SELECT * FROM vw_products_with_bid_stats 
+            ORDER BY product_id 
+            LIMIT $1 OFFSET $2
+        `;
+        const result = await db.query(query, [limit, offset]);
+
+        // Calculate pagination metadata
+        const totalPages = Math.ceil(totalRecords / limit);
+        const hasNextPage = page < totalPages;
+        const hasPrevPage = page > 1;
+
         res.status(200).json({
             success: true,
-            count: result.rows.length,
-            data: result.rows
+            data: result.rows,
+            pagination: {
+                currentPage: page,
+                totalPages: totalPages,
+                totalRecords: totalRecords,
+                recordsPerPage: limit,
+                hasNextPage: hasNextPage,
+                hasPrevPage: hasPrevPage,
+                nextPage: hasNextPage ? page + 1 : null,
+                prevPage: hasPrevPage ? page - 1 : null
+            }
         });
     } catch (error) {
         console.error('Error fetching products:', error);
