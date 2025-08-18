@@ -1,22 +1,20 @@
-# Use Node.js 18 Alpine as base image
-FROM node:18-alpine
+# Use official Node.js LTS image
+FROM node:20
 
-# Set working directory
-WORKDIR /app
+# Set the working directory in the container
+WORKDIR /usr/src/app
 
-# Install dependencies for production
+# Copy package files first to leverage Docker cache
 COPY package*.json ./
-RUN npm ci --only=production
 
-# Copy application code
+# Install dependencies (use npm ci for production)
+RUN npm install
+
+# Copy the rest of the application code
 COPY . .
 
-# Set environment variables
-ENV NODE_ENV=production
-ENV PORT=3000
-
-# Expose the application port
+# Expose the port the app runs on
 EXPOSE 3000
 
-# Start the application
-CMD ["node", "src/index.js"]
+# Start the app (consider "start" for production instead of "dev")
+CMD ["npm", "run", "dev"]
