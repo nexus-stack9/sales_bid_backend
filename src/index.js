@@ -29,6 +29,7 @@ app.use(bodyParser.json());
 
 // Routes
 app.use("/api", require("./routes/router"));
+app.use("/sellers", require("./routes/sellerRoutes"));
 app.use('/auth', require('./routes/loginRoutes'));
 app.use('/file', require('./routes/fileRoutes'));
 app.use('/password', require('./routes/passwordResetRoutes')); // Add password reset routes
@@ -36,7 +37,7 @@ app.use('/profile', require('./routes/profileRoutes'));
 app.use('/bids', require('./routes/BidsRoute'));
 app.use("/global", require("./routes/globalRoutes"));
 app.use("/wishlist", require("./routes/WishlistRoute"));
-app.use("/file", require("./routes/fileRoutes"));
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {
