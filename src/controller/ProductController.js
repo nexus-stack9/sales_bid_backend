@@ -122,18 +122,123 @@ const getAllProducts = async (req, res) => {
         const limit = parseInt(req.query.limit) || 20;
         const offset = (page - 1) * limit;
 
+        // Extract filter parameters
+        const {
+            categories = [],
+            locations = [],
+            minPrice,
+            maxPrice,
+            timeLeft = [],
+            condition = [],
+            searchQuery
+        } = req.query;
+
+        // Parse filters
+        const filterCategories = Array.isArray(categories) ? categories : (categories ? [categories] : []);
+        const filterLocations = Array.isArray(locations) ? locations : (locations ? [locations] : []);
+        const filterTimeLeft = Array.isArray(timeLeft) ? timeLeft : (timeLeft ? [timeLeft] : []);
+        const filterCondition = Array.isArray(condition) ? condition : (condition ? [condition] : []);
+
+        // Build WHERE clause
+        let whereClause = '';
+        const queryParams = [];
+        let paramIndex = 1;
+
+        const whereConditions = [];
+
+        // Search query filter
+        if (searchQuery) {
+            whereConditions.push(`name ILIKE $${paramIndex}`);
+            queryParams.push(`%${searchQuery}%`);
+            paramIndex++;
+        }
+
+        // Category filter
+        if (filterCategories.length > 0) {
+            const placeholders = filterCategories.map((_, i) => `$${paramIndex + i}`).join(', ');
+            whereConditions.push(`category_name IN (${placeholders})`);
+            queryParams.push(...filterCategories);
+            paramIndex += filterCategories.length;
+        }
+
+        // Location filter
+        if (filterLocations.length > 0) {
+            const placeholders = filterLocations.map((_, i) => `$${paramIndex + i}`).join(', ');
+            whereConditions.push(`location IN (${placeholders})`);
+            queryParams.push(...filterLocations);
+            paramIndex += filterLocations.length;
+        }
+
+        // Price range filter
+        if (minPrice !== undefined) {
+            whereConditions.push(`starting_price >= $${paramIndex}`);
+            queryParams.push(parseFloat(minPrice));
+            paramIndex++;
+        }
+        if (maxPrice !== undefined) {
+            whereConditions.push(`starting_price <= $${paramIndex}`);
+            queryParams.push(parseFloat(maxPrice));
+            paramIndex++;
+        }
+
+        // Condition filter
+        if (filterCondition.length > 0) {
+            const placeholders = filterCondition.map((_, i) => `$${paramIndex + i}`).join(', ');
+            whereConditions.push(`condition IN (${placeholders})`);
+            queryParams.push(...filterCondition);
+            paramIndex += filterCondition.length;
+        }
+
+        // Time left filter
+        if (filterTimeLeft.length > 0) {
+            const timeConditions = filterTimeLeft.map(filter => {
+                switch (filter) {
+                    case '1h':
+                        return `EXTRACT(EPOCH FROM (auction_end - NOW())) / 3600 < 1`;
+                    case '12h':
+                        return `EXTRACT(EPOCH FROM (auction_end - NOW())) / 3600 < 12`;
+                    case '24h':
+                        return `EXTRACT(EPOCH FROM (auction_end - NOW())) / 3600 < 24`;
+                    case '1d+':
+                        return `EXTRACT(EPOCH FROM (auction_end - NOW())) / 3600 >= 24`;
+                    default:
+                        return '';
+                }
+            }).filter(condition => condition !== '');
+
+            if (timeConditions.length > 0) {
+                whereConditions.push(`(${timeConditions.join(' OR ')})`);
+            }
+        }
+
+        if (whereConditions.length > 0) {
+            whereClause = `WHERE ${whereConditions.join(' AND ')}`;
+        }
+
         // Get total count for pagination metadata
-        const countQuery = 'SELECT COUNT(*) FROM vw_products_with_bid_stats';
-        const countResult = await db.query(countQuery);
+        const countQuery = `SELECT COUNT(*) FROM vw_products_with_bid_stats ${whereClause}`;
+        const countResult = await db.query(countQuery, queryParams);
         const totalRecords = parseInt(countResult.rows[0].count);
 
         // Get paginated data
         const query = `
             SELECT * FROM vw_products_with_bid_stats 
+            ${whereClause}
             ORDER BY product_id 
-            LIMIT $1 OFFSET $2
+            LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
         `;
-        const result = await db.query(query, [limit, offset]);
+        
+        const result = await db.query(query, [...queryParams, limit, offset]);
+
+        // Get filter options (distinct values)
+        const filterOptionsQuery = `
+            SELECT 
+                ARRAY(SELECT DISTINCT category_name FROM vw_products_with_bid_stats WHERE category_name IS NOT NULL) as categories,
+                ARRAY(SELECT DISTINCT location FROM vw_products_with_bid_stats WHERE location IS NOT NULL) as locations,
+                ARRAY(SELECT DISTINCT condition FROM vw_products_with_bid_stats WHERE condition IS NOT NULL) as conditions
+        `;
+        const filterOptionsResult = await db.query(filterOptionsQuery);
+        const filterOptions = filterOptionsResult.rows[0];
 
         // Calculate pagination metadata
         const totalPages = Math.ceil(totalRecords / limit);
@@ -143,6 +248,11 @@ const getAllProducts = async (req, res) => {
         res.status(200).json({
             success: true,
             data: result.rows,
+            filterOptions: {
+                categories: filterOptions.categories || [],
+                locations: filterOptions.locations || [],
+                conditions: filterOptions.conditions || []
+            },
             pagination: {
                 currentPage: page,
                 totalPages: totalPages,
