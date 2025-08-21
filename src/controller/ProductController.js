@@ -117,7 +117,7 @@ const initProductWebSocket = (wss) => {
 // Get all products
 const getAllProducts = async (req, res) => {
     try {
-        // Extract pagination parameters from query string
+        // Extract pagination parameters
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 20;
         const offset = (page - 1) * limit;
@@ -133,20 +133,18 @@ const getAllProducts = async (req, res) => {
             searchQuery
         } = req.query;
 
-        // Parse filters
+        // Parse filters into arrays
         const filterCategories = Array.isArray(categories) ? categories : (categories ? [categories] : []);
         const filterLocations = Array.isArray(locations) ? locations : (locations ? [locations] : []);
         const filterTimeLeft = Array.isArray(timeLeft) ? timeLeft : (timeLeft ? [timeLeft] : []);
         const filterCondition = Array.isArray(condition) ? condition : (condition ? [condition] : []);
 
-        // Build WHERE clause
-        let whereClause = '';
+        // Build dynamic WHERE clause
+        let whereConditions = [];
         const queryParams = [];
         let paramIndex = 1;
 
-        const whereConditions = [];
-
-        // Search query filter
+        // Search query filter (case-insensitive partial match on product name)
         if (searchQuery) {
             whereConditions.push(`name ILIKE $${paramIndex}`);
             queryParams.push(`%${searchQuery}%`);
@@ -169,13 +167,13 @@ const getAllProducts = async (req, res) => {
             paramIndex += filterLocations.length;
         }
 
-        // Price range filter
-        if (minPrice !== undefined) {
+        // Price range filter (based on starting_price)
+        if (minPrice !== undefined && !isNaN(parseFloat(minPrice))) {
             whereConditions.push(`starting_price >= $${paramIndex}`);
             queryParams.push(parseFloat(minPrice));
             paramIndex++;
         }
-        if (maxPrice !== undefined) {
+        if (maxPrice !== undefined && !isNaN(parseFloat(maxPrice))) {
             whereConditions.push(`starting_price <= $${paramIndex}`);
             queryParams.push(parseFloat(maxPrice));
             paramIndex++;
@@ -189,7 +187,7 @@ const getAllProducts = async (req, res) => {
             paramIndex += filterCondition.length;
         }
 
-        // Time left filter
+        // Time left filter (convert to hours remaining)
         if (filterTimeLeft.length > 0) {
             const timeConditions = filterTimeLeft.map(filter => {
                 switch (filter) {
@@ -202,40 +200,39 @@ const getAllProducts = async (req, res) => {
                     case '1d+':
                         return `EXTRACT(EPOCH FROM (auction_end - NOW())) / 3600 >= 24`;
                     default:
-                        return '';
+                        return null;
                 }
-            }).filter(condition => condition !== '');
+            }).filter(condition => condition !== null);
 
             if (timeConditions.length > 0) {
                 whereConditions.push(`(${timeConditions.join(' OR ')})`);
             }
         }
 
-        if (whereConditions.length > 0) {
-            whereClause = `WHERE ${whereConditions.join(' AND ')}`;
-        }
+        // Final WHERE clause
+        const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
-        // Get total count for pagination metadata
+        // Get total count for pagination
         const countQuery = `SELECT COUNT(*) FROM vw_products_with_bid_stats ${whereClause}`;
         const countResult = await db.query(countQuery, queryParams);
         const totalRecords = parseInt(countResult.rows[0].count);
 
-        // Get paginated data
-        const query = `
+        // Get paginated products
+        const dataQuery = `
             SELECT * FROM vw_products_with_bid_stats 
             ${whereClause}
             ORDER BY product_id 
             LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
         `;
-        
-        const result = await db.query(query, [...queryParams, limit, offset]);
+        const dataResult = await db.query(dataQuery, [...queryParams, limit, offset]);
 
         // Get filter options (distinct values)
         const filterOptionsQuery = `
             SELECT 
-                ARRAY(SELECT DISTINCT category_name FROM vw_products_with_bid_stats WHERE category_name IS NOT NULL) as categories,
-                ARRAY(SELECT DISTINCT location FROM vw_products_with_bid_stats WHERE location IS NOT NULL) as locations,
-                ARRAY(SELECT DISTINCT condition FROM vw_products_with_bid_stats WHERE condition IS NOT NULL) as conditions
+                ARRAY(SELECT DISTINCT category_name FROM vw_products_with_bid_stats WHERE category_name IS NOT NULL ORDER BY category_name) AS categories,
+                ARRAY(SELECT DISTINCT location FROM vw_products_with_bid_stats WHERE location IS NOT NULL ORDER BY location) AS locations,
+                ARRAY(SELECT DISTINCT condition FROM vw_products_with_bid_stats WHERE condition IS NOT NULL ORDER BY condition) AS conditions,
+                ARRAY(SELECT DISTINCT vendor_name FROM vw_products_with_bid_stats WHERE vendor_name IS NOT NULL ORDER BY vendor_name) AS sellers
         `;
         const filterOptionsResult = await db.query(filterOptionsQuery);
         const filterOptions = filterOptionsResult.rows[0];
@@ -245,24 +242,36 @@ const getAllProducts = async (req, res) => {
         const hasNextPage = page < totalPages;
         const hasPrevPage = page > 1;
 
+        // Get max MSRP (retail_value) from filtered results
+        const maxMsrpQuery = `
+            SELECT MAX(retail_value) AS max_msrp 
+            FROM vw_products_with_bid_stats 
+            ${whereClause}
+        `;
+        const maxMsrpResult = await db.query(maxMsrpQuery, queryParams);
+        const maxMsrp = maxMsrpResult.rows[0].max_msrp ? parseFloat(maxMsrpResult.rows[0].max_msrp) : null;
+
+        // Send success response
         res.status(200).json({
             success: true,
-            data: result.rows,
+            data: dataResult.rows,
             filterOptions: {
                 categories: filterOptions.categories || [],
                 locations: filterOptions.locations || [],
-                conditions: filterOptions.conditions || []
+                conditions: filterOptions.conditions || [],
+                sellers: filterOptions.sellers || []
             },
             pagination: {
                 currentPage: page,
-                totalPages: totalPages,
-                totalRecords: totalRecords,
+                totalPages,
+                totalRecords,
                 recordsPerPage: limit,
-                hasNextPage: hasNextPage,
-                hasPrevPage: hasPrevPage,
+                hasNextPage,
+                hasPrevPage,
                 nextPage: hasNextPage ? page + 1 : null,
                 prevPage: hasPrevPage ? page - 1 : null
-            }
+            },
+            maxMsrp // 👈 Included in response
         });
     } catch (error) {
         console.error('Error fetching products:', error);
