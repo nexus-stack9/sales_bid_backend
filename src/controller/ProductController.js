@@ -122,6 +122,9 @@ const getAllProducts = async (req, res) => {
         const limit = parseInt(req.query.limit) || 20;
         const offset = (page - 1) * limit;
 
+        // Extract userId from request
+        const userId = req.user?.userId || req.query.userId || req.body.userId || null;
+
         // Extract filter parameters
         const {
             categories = [],
@@ -139,12 +142,12 @@ const getAllProducts = async (req, res) => {
         const filterTimeLeft = Array.isArray(timeLeft) ? timeLeft : (timeLeft ? [timeLeft] : []);
         const filterCondition = Array.isArray(condition) ? condition : (condition ? [condition] : []);
 
-        // Build dynamic WHERE clause
+        // Build dynamic WHERE clause for the original view
         let whereConditions = [];
         const queryParams = [];
         let paramIndex = 1;
 
-        // Search query filter (case-insensitive partial match on product name)
+        // Search query filter
         if (searchQuery) {
             whereConditions.push(`name ILIKE $${paramIndex}`);
             queryParams.push(`%${searchQuery}%`);
@@ -167,7 +170,7 @@ const getAllProducts = async (req, res) => {
             paramIndex += filterLocations.length;
         }
 
-        // Price range filter (based on starting_price)
+        // Price range filter
         if (minPrice !== undefined && !isNaN(parseFloat(minPrice))) {
             whereConditions.push(`starting_price >= $${paramIndex}`);
             queryParams.push(parseFloat(minPrice));
@@ -187,7 +190,7 @@ const getAllProducts = async (req, res) => {
             paramIndex += filterCondition.length;
         }
 
-        // Time left filter (convert to hours remaining)
+        // Time left filter
         if (filterTimeLeft.length > 0) {
             const timeConditions = filterTimeLeft.map(filter => {
                 switch (filter) {
@@ -212,12 +215,11 @@ const getAllProducts = async (req, res) => {
         // Final WHERE clause
         const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
-        // Get total count for pagination
+        // Step 1: Get products using the original view
         const countQuery = `SELECT COUNT(*) FROM vw_products_with_bid_stats ${whereClause}`;
         const countResult = await db.query(countQuery, queryParams);
         const totalRecords = parseInt(countResult.rows[0].count);
 
-        // Get paginated products
         const dataQuery = `
             SELECT * FROM vw_products_with_bid_stats 
             ${whereClause}
@@ -226,7 +228,33 @@ const getAllProducts = async (req, res) => {
         `;
         const dataResult = await db.query(dataQuery, [...queryParams, limit, offset]);
 
-        // Get filter options (distinct values)
+        // Step 2: Add wishlist information if user is logged in
+        let productsWithWishlist = dataResult.rows;
+        
+        if (userId && dataResult.rows.length > 0) {
+            const productIds = dataResult.rows.map(p => p.product_id);
+            const wishlistQuery = `
+                SELECT product_id 
+                FROM wishlist 
+                WHERE user_id = $1 AND product_id = ANY($2::int[])
+            `;
+            const wishlistResult = await db.query(wishlistQuery, [parseInt(userId), productIds]);
+            const wishlistedProductIds = new Set(wishlistResult.rows.map(row => row.product_id));
+            
+            // Add is_in_wishlist column to each product
+            productsWithWishlist = dataResult.rows.map(product => ({
+                ...product,
+                is_in_wishlist: wishlistedProductIds.has(product.product_id) ? 1 : 0
+            }));
+        } else {
+            // Add is_in_wishlist as 0 for all products when no user
+            productsWithWishlist = dataResult.rows.map(product => ({
+                ...product,
+                is_in_wishlist: 0
+            }));
+        }
+
+        // Get filter options
         const filterOptionsQuery = `
             SELECT 
                 ARRAY(SELECT DISTINCT category_name FROM vw_products_with_bid_stats WHERE category_name IS NOT NULL ORDER BY category_name) AS categories,
@@ -242,7 +270,7 @@ const getAllProducts = async (req, res) => {
         const hasNextPage = page < totalPages;
         const hasPrevPage = page > 1;
 
-        // Get max MSRP (retail_value) from filtered results
+        // Get max MSRP
         const maxMsrpQuery = `
             SELECT MAX(retail_value) AS max_msrp 
             FROM vw_products_with_bid_stats 
@@ -254,7 +282,7 @@ const getAllProducts = async (req, res) => {
         // Send success response
         res.status(200).json({
             success: true,
-            data: dataResult.rows,
+            data: productsWithWishlist,
             filterOptions: {
                 categories: filterOptions.categories || [],
                 locations: filterOptions.locations || [],
@@ -271,7 +299,7 @@ const getAllProducts = async (req, res) => {
                 nextPage: hasNextPage ? page + 1 : null,
                 prevPage: hasPrevPage ? page - 1 : null
             },
-            maxMsrp // 👈 Included in response
+            maxMsrp
         });
     } catch (error) {
         console.error('Error fetching products:', error);

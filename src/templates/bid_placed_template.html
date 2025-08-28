@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bid Confirmation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            padding: 40px 0;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            width: 100%;
+            background-color: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+        }
+        
+        .email-header {
+            background-color: #4F46E5;
+            padding: 24px;
+            text-align: center;
+        }
+        
+        .logo {
+            width: 140px;
+            height: auto;
+        }
+        
+        .email-body {
+            padding: 40px 32px;
+            color: #1F2937;
+        }
+        
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #111827;
+        }
+        
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: #4B5563;
+        }
+        
+        .bid-confirmation {
+            background-color: #F9FAFB;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 32px 0;
+        }
+        
+        .bid-detail {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #E5E7EB;
+        }
+        
+        .bid-detail:last-child {
+            border-bottom: none;
+        }
+        
+        .detail-label {
+            font-weight: 500;
+            color: #4B5563;
+        }
+        
+        .detail-value {
+            font-weight: 600;
+            color: #111827;
+        }
+        
+        .bid-amount {
+            color: #059669;
+            font-size: 20px;
+        }
+        
+        .product-image {
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            height: 200px;
+            object-fit: cover;
+            background-color: #F3F4F6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9CA3AF;
+        }
+        
+        .help-text {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #E5E7EB;
+            font-size: 14px;
+            color: #6B7280;
+        }
+        
+        .email-footer {
+            background-color: #F9FAFB;
+            padding: 24px;
+            text-align: center;
+            border-top: 1px solid #E5E7EB;
+        }
+        
+        .social-links {
+            margin-bottom: 16px;
+        }
+        
+        .social-icon {
+            display: inline-block;
+            margin: 0 8px;
+            width: 32px;
+            height: 32px;
+            background-color: #E5E7EB;
+            border-radius: 50%;
+            line-height: 32px;
+            text-align: center;
+            font-size: 16px;
+            color: #4B5563;
+            text-decoration: none;
+        }
+        
+        .footer-text {
+            font-size: 12px;
+            color: #9CA3AF;
+            max-width: 400px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+        
+        a {
+            color: #4F46E5;
+            text-decoration: none;
+        }
+        
+        .button {
+            display: inline-block;
+            background-color: #4F46E5;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <img src="data:image/png;base64," alt="SalesBid Logo" class="logo">
+        </div>
+        
+        <div class="email-body">
+            <h1>Your Bid Has Been Placed Successfully!</h1>
+            <p>Hello [User Name],</p>
+            <p>Thank you for placing your bid with SalesBid. We've confirmed your bid on the following item:</p>
+            
+            <div class="bid-confirmation">
+                <div class="product-image">Product Image</div>
+                
+                <div class="bid-detail">
+                    <span class="detail-label">Product Name:</span>
+                    <span class="detail-value">Vintage Luxury Watch</span>
+                </div>
+                
+                <div class="bid-detail">
+                    <span class="detail-label">Description:</span>
+                    <span class="detail-value">Premium automatic movement, stainless steel case, genuine leather strap</span>
+                </div>
+                
+                <div class="bid-detail">
+                    <span class="detail-label">Your Bid Amount:</span>
+                    <span class="detail-value bid-amount">$425.00</span>
+                </div>
+                
+                <div class="bid-detail">
+                    <span class="detail-label">MSRP:</span>
+                    <span class="detail-value">$600.00</span>
+                </div>
+                
+                <div class="bid-detail">
+                    <span class="detail-label">Auction End Date:</span>
+                    <span class="detail-value">October 15, 2023 at 2:30 PM EST</span>
+                </div>
+            </div>
+            
+            <p>You will be notified if you're outbid or when the auction ends. Good luck with your bid!</p>
+            
+            <a href="#" class="button">View Auction Status</a>
+            
+            <div class="help-text">
+                <p>Questions about your bid? Contact our support team at <a href="mailto:support@SalesBid.com">support@SalesBid.com</a> or visit our <a href="#">Help Center</a>.</p>
+            </div>
+        </div>
+        
+        <div class="email-footer">
+            <div class="social-links">
+                <a href="#" class="social-icon">f</a>
+                <a href="#" class="social-icon">t</a>
+                <a href="#" class="social-icon">in</a>
+            </div>
+            <p class="footer-text">
+                © 2023 SalesBid. All rights reserved.<br>
+                123 Auction Street, Bidville, AU 54321<br>
+                <a href="#">Unsubscribe</a> | <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
