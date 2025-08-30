@@ -180,6 +180,7 @@ const sendOutbidNotifications = async (product_id, current_bidder_id, bid_amount
           productImage = `<img src="${firstImageUrl}" alt="${product.name}" style="max-width: 100%; max-height: 200px; object-fit: contain; border: none; display: block; margin: 0 auto;">`;
         }
 
+        const domain = process.env.DOMAIN_URL || 'http://localhost:8080';
         const replacements = {
           'User Name': bidder.first_name,
           'Product Name': product.name,
@@ -187,7 +188,8 @@ const sendOutbidNotifications = async (product_id, current_bidder_id, bid_amount
           'Bid Amount': formatCurrency(bidder.max_bid),
           'Current Highest Bid': formatCurrency(product.current_highest_bid || 0),
           'Auction End Date': auctionEndDate,
-          'Product Image': productImage
+          'Product Image': productImage,
+          'AUCTION_URL': `${domain}/auctions/${product_id}`
         };
 
         // Load and process the HTML template
