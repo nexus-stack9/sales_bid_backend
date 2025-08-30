@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bid Confirmation</title>
+    <title>Bid Outbid Notification</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Proxima+Nova:wght@300;400;500;600;700&display=swap');
         
@@ -71,6 +71,7 @@
             padding: 16px;
             margin: 16px 0 0 0;
             font-family: 'Proxima Nova', sans-serif;
+            border: 1px solid #FEE2E2;
         }
         
         .product-info {
@@ -135,7 +136,7 @@
         }
         
         .bid-amount {
-            color: #059669;
+            color: #EF4444;
             font-size: 20px;
             font-family: 'Proxima Nova', sans-serif;
         }
@@ -219,6 +220,20 @@
             font-weight: 500;
             margin-top: 24px;
             font-family: 'Proxima Nova', sans-serif;
+        }
+        
+        .warning-box {
+            background-color: #FEF2F2;
+            border-left: 4px solid #EF4444;
+            padding: 16px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        
+        .warning-box p {
+            margin: 0;
+            color: #B91C1C;
+            font-weight: 500;
         }
         
         /* Mobile Responsive Styles */
@@ -423,9 +438,13 @@
         </div>
         
         <div class="email-body">
-            <h1>Your Bid Has Been Placed Successfully!</h1>
+            <h1>Someone Has Outbid You!</h1>
             <p>Hello [User Name],</p>
-            <p>Thank you for placing your bid with SalesBid. We've confirmed your bid on the following item:</p>
+            <p>We're sorry to inform you that your bid on the following item has been outbid:</p>
+            
+            <div class="warning-box">
+                <p>Your bid has been outbid. Don't worry - you can still place a new bid to win this item!</p>
+            </div>
             
             <div class="bid-confirmation">
                 <div class="product-image" style="text-align: center; margin: 0 0 15px 0; background: none; box-shadow: none;">
@@ -445,13 +464,13 @@
                 </div>
                 
                 <div class="product-section">
-                    <div class="detail-label">Your Bid Amount:</div>
+                    <div class="detail-label">Your Previous Bid:</div>
                     <div class="detail-value bid-amount">[Bid Amount]</div>
                 </div>
                 
                 <div class="product-section">
-                    <div class="detail-label">MSRP:</div>
-                    <div class="detail-value">[MSRP]</div>
+                    <div class="detail-label">Current Highest Bid:</div>
+                    <div class="detail-value">[Current Highest Bid]</div>
                 </div>
                 
                 <div class="product-section">
@@ -460,10 +479,12 @@
                 </div>
             </div>
             
-            <p>You will be notified if you're outbid or when the auction ends. Good luck with your bid!</p>
+            <!-- <p>Don't give up yet! You can still place a new bid to win this item. Click the button below to return to the auction:</p> -->
+            
+            <!-- <a href="#" class="button">Place New Bid</a> -->
             
             <div class="help-text">
-                <p>Questions about your bid? Contact our support team at <a href="mailto:support@SalesBid.com">support@SalesBid.com</a> or visit our <a href="#">Help Center</a>.</p>
+                <p>Need help with your bid? Contact our support team at <a href="mailto:support@SalesBid.com">support@SalesBid.com</a> or visit our <a href="#">Help Center</a>.</p>
             </div>
         </div>
         
