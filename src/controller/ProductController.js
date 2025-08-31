@@ -172,12 +172,12 @@ const getAllProducts = async (req, res) => {
 
         // Price range filter
         if (minPrice !== undefined && !isNaN(parseFloat(minPrice))) {
-            whereConditions.push(`starting_price >= $${paramIndex}`);
+            whereConditions.push(`retail_value >= $${paramIndex}`);
             queryParams.push(parseFloat(minPrice));
             paramIndex++;
         }
         if (maxPrice !== undefined && !isNaN(parseFloat(maxPrice))) {
-            whereConditions.push(`starting_price <= $${paramIndex}`);
+            whereConditions.push(`retail_value <= $${paramIndex}`);
             queryParams.push(parseFloat(maxPrice));
             paramIndex++;
         }
@@ -266,7 +266,7 @@ const getAllProducts = async (req, res) => {
         const filterOptions = filterOptionsResult.rows[0];
 
         // Calculate pagination metadata
-        const totalPages = Math.ceil(totalRecords / limit);
+        const totalPages = Math.ceil(totalRecords / limit) ;
         const hasNextPage = page < totalPages;
         const hasPrevPage = page > 1;
 
