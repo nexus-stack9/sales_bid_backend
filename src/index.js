@@ -8,6 +8,7 @@ const bodyParser = require('body-parser');
 const http = require('http');
 const WebSocket = require('ws');
 const { initProductWebSocket } = require('./controller/ProductController');
+const addressRoutes = require('./routes/addressRoutes');
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use("/global", require("./routes/globalRoutes"));
 app.use("/wishlist", require("./routes/WishlistRoute"));
 app.use("/search", require("./routes/SearchRoutes"));
 app.use("/delivery", require("./routes/shiprocketRoutes"));
+app.use('/addres', require("./routes/addressRoutes"));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
