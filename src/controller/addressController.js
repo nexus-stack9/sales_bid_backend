@@ -55,6 +55,99 @@ const addAddress = async (req, res) => {
     }
 };
 
+const getAddressesById = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const result = await db.query(
+            'SELECT * FROM addresses WHERE user_id = $1',
+            [userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                error: 'No addresses found for this user.'
+            });
+        }
+
+        res.json({
+            message: 'Addresses fetched successfully',
+            addresses: result.rows
+        });
+    } catch (error) {
+        console.error('Error fetching addresses:', error);
+        res.status(500).json({
+            error: 'Internal server error occurred while fetching addresses.'
+        });
+    }
+};
+
+const editAddress = async (req, res) => {
+    try {
+        const addressId = req.params.id;
+        const updateData = req.body;
+        
+        const result = await db.query(
+            `UPDATE addresses SET 
+            label = COALESCE($1, label),
+            street = COALESCE($2, street),
+            city = COALESCE($3, city),
+            state = COALESCE($4, state),
+            postal_code = COALESCE($5, postal_code),
+            country = COALESCE($6, country),
+            is_primary = COALESCE($7, is_primary)
+            WHERE id = $8
+            RETURNING *`,
+            [updateData.label, updateData.street, updateData.city, updateData.state, updateData.postalCode, updateData.country, updateData.isPrimary, addressId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ 
+                error: 'Address not found.' 
+            });
+        }
+
+        res.json({
+            message: 'Address updated successfully',
+            address: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Error updating address:', error);
+        res.status(500).json({
+            error: 'Internal server error occurred while updating the address.'
+        });
+    }
+};
+
+const deleteAddress = async (req, res) => {
+    try {
+        const addressId = req.params.id;
+        
+        const result = await db.query(
+            'DELETE FROM addresses WHERE id = $1 RETURNING *',
+            [addressId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ 
+                error: 'Address not found.' 
+            });
+        }
+
+        res.json({
+            message: 'Address deleted successfully',
+            address: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Error deleting address:', error);
+        res.status(500).json({
+            error: 'Internal server error occurred while deleting the address.'
+        });
+    }
+};
+
 module.exports = {
-    addAddress
+    addAddress,
+    getAddressesById,
+    editAddress,
+    deleteAddress
 };
