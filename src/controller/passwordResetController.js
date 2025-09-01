@@ -89,9 +89,9 @@ const requestPasswordReset = async (req, res) => {
  * @param {Object} res - Express response object
  */
 const verifyOTPAndResetPassword = async (req, res) => {
-  const { email, otp, newPassword } = req.body;
+  const { credentials, otp, newPassword } = req.body;
 
-  if (!email || !otp || !newPassword) {
+  if (!credentials || !otp || !newPassword) {
     return res.status(400).json({ 
       error: 'Email, OTP, and new password are required.' 
     });
@@ -101,7 +101,7 @@ const verifyOTPAndResetPassword = async (req, res) => {
     // Get user
     const userResult = await db.query(
       'SELECT * FROM users WHERE email = $1',
-      [email]
+      [credentials]
     );
 
     const user = userResult.rows[0];
@@ -112,7 +112,7 @@ const verifyOTPAndResetPassword = async (req, res) => {
 
     // Get stored OTP
     const tokenResult = await db.query(
-      'SELECT * FROM password_reset_tokens WHERE user_id = $1',
+      'SELECT * FROM otp_tokens WHERE user_id = $1',
       [user.user_id]
     );
 
@@ -132,33 +132,34 @@ const verifyOTPAndResetPassword = async (req, res) => {
     }
 
     // Decrypt stored OTP
-    const decryptedStoredOTP = CryptoJS.AES.decrypt(
+    const bytes = CryptoJS.AES.decrypt(
       tokenRecord.token,
       process.env.SECRET_KEY
-    ).toString(CryptoJS.enc.Utf8);
+    );
+    const decryptedStoredOTP = bytes.toString(CryptoJS.enc.Utf8);
 
-    // Verify OTP
-    if (otp !== decryptedStoredOTP) {
+    // Verify OTP - ensure both are strings and trim any whitespace
+    if (otp.toString().trim() !== decryptedStoredOTP.trim()) {
       return res.status(400).json({ error: 'Invalid password reset code.' });
     }
 
     // Encrypt new password
-    const encryptedPassword = CryptoJS.AES.encrypt(
-      newPassword,
-      process.env.SECRET_KEY
-    ).toString();
+    // const encryptedPassword = CryptoJS.AES.encrypt(
+    //   newPassword,
+    //   process.env.SECRET_KEY
+    // ).toString();
 
     // Update password
     await db.query(
       'UPDATE users SET password_hash = $1 WHERE user_id = $2',
-      [encryptedPassword, user.user_id]
+      [newPassword, user.user_id]
     );
 
     // Delete used token
-    await db.query(
-      'DELETE FROM password_reset_tokens WHERE user_id = $1',
-      [user.user_id]
-    );
+    // await db.query(
+    //   'DELETE FROM otp_tokens WHERE user_id = $1',
+    //   [user.user_id]
+    // );
 
     res.status(200).json({ message: 'Password has been reset successfully.' });
   } catch (error) {
