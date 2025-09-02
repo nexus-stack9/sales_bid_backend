@@ -12,8 +12,8 @@ class ShiprocketPriceCalculator {
     async authenticate() {
         try {
             const response = await axios.post(`${this.baseURL}/auth/login`, {
-                email: this.email,
-                password: this.password
+                email: process.env.SHIPROCKET_EMAIL,
+                password: process.env.SHIPROCKET_PASSWORD
             });
             
             this.token = response.data.token;
@@ -37,7 +37,6 @@ class ShiprocketPriceCalculator {
                 length, // in cm
                 breadth, // in cm
                 height, // in cm
-                declared_value = 100, // COD amount or product value
                 cod = 0 // 1 for COD, 0 for prepaid
             } = packageDetails;
 
@@ -53,7 +52,6 @@ class ShiprocketPriceCalculator {
                     length,
                     breadth,
                     height,
-                    declared_value,
                     cod
                 }
             });
@@ -131,8 +129,8 @@ class ShiprocketPriceCalculator {
 // Usage Example
 async function calculateDeliveryPrice() {
     const shiprocket = new ShiprocketPriceCalculator(
-        'your-email@example.com', // Replace with your Shiprocket email
-        'your-password'           // Replace with your Shiprocket password
+        process.env.SHIPROCKET_EMAIL,
+        process.env.SHIPROCKET_PASSWORD
     );
 
     const packageDetails = {
@@ -142,7 +140,6 @@ async function calculateDeliveryPrice() {
         length: 20,                   // 20 cm
         breadth: 15,                  // 15 cm
         height: 10,                   // 10 cm
-        declared_value: 1000,         // Rs. 1000
         cod: 0                        // Prepaid (0) or COD (1)
     };
 
@@ -194,8 +191,8 @@ async function calculateDeliveryPrice() {
 // Alternative function for quick rate check
 async function quickRateCheck(pickup_pin, delivery_pin, weight, dimensions) {
     const shiprocket = new ShiprocketPriceCalculator(
-        process.env.SHIPROCKET_EMAIL || 'your-email@example.com',
-        process.env.SHIPROCKET_PASSWORD || 'your-password'
+        process.env.SHIPROCKET_EMAIL,
+        process.env.SHIPROCKET_PASSWORD
     );
 
     try {
@@ -206,7 +203,6 @@ async function quickRateCheck(pickup_pin, delivery_pin, weight, dimensions) {
             length: dimensions.length,
             breadth: dimensions.breadth,
             height: dimensions.height,
-            declared_value: dimensions.value || 500,
             cod: 0
         };
 
