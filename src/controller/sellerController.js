@@ -6,20 +6,21 @@ const sellerController = {
         try {
             const query = `
                 SELECT 
-                    s.id,
-                    s.name,
+                    s.vendor_id,
+                    s.vendor_name,
                     s.email,
-                    s.phone,
+                    s.phone_number,
                     s.business_type,
                     s.business_name,
                     s.status,
+                    s.profilepicturepath,
                     s.created_at,
                     COUNT(p.product_id) AS product_count,
                     COALESCE(SUM(CASE WHEN p.status = 'sold' THEN 1 ELSE 0 END), 0) AS sold_products,
                     COALESCE(SUM(CASE WHEN p.status = 'active' THEN 1 ELSE 0 END), 0) AS active_products
-                FROM sellers s
-                LEFT JOIN products p ON s.id = p.product_id
-                GROUP BY s.id
+                FROM sb_vendors s
+                LEFT JOIN products p ON s.vendor_id = p.product_id
+                GROUP BY s.vendor_id
                 ORDER BY s.created_at DESC
             `;
             
@@ -53,7 +54,7 @@ const sellerController = {
             }
             
             // Get seller basic info
-            const sellerQuery = 'SELECT * FROM sellers WHERE id = $1';
+            const sellerQuery = 'SELECT * FROM sb_vendors WHERE vendor_id = $1';
             const sellerResult = await db.query(sellerQuery, [id]);
             
             if (!sellerResult.rows || sellerResult.rows.length === 0) {
@@ -111,6 +112,7 @@ const sellerController = {
  createSeller: async (req, res) => {
     try {
         const {
+            profilePictureFile,
             name,
             email,
             phone,
@@ -122,14 +124,14 @@ const sellerController = {
             businessDescription: business_description,
             panNumber: pan_number,
             aadhaarNumber: aadhaar_number,
-            panCard,
-            aadhaarFront,
-            aadhaarBack,
+            pan_card_path,
+            aadhaar_front_path,
+            aadhaar_back_path,
             accountHolderName: account_holder_name,
             accountNumber: bank_account_number,
             bankName: bank_name,
             ifscCode: ifsc_code,
-            bankProof,
+            bank_proof_path,
             agreeTerms,
             addressLine1,
             addressLine2,
@@ -150,7 +152,7 @@ const sellerController = {
         }
 
         // Check if email already exists
-        const emailCheck = await db.query('SELECT id FROM sellers WHERE email = $1', [email]);
+        const emailCheck = await db.query('SELECT vendor_id FROM sb_vendors WHERE email = $1', [email]);
         if (emailCheck.rows.length > 0) {
             return res.status(409).json({
                 success: false,
@@ -160,8 +162,8 @@ const sellerController = {
 
         // Insert the new seller
         const query = `
-            INSERT INTO sellers (
-                name, email, phone, dob, business_type, business_name,
+            INSERT INTO sb_vendors (
+                vendor_name, email, phone_number, dob, business_type, business_name,
                 gst_number, items_category, business_description, pan_number, 
                 aadhaar_number,
                 account_holder_name, bank_account_number, bank_name, ifsc_code, agree_terms, status, addressLine1,
@@ -169,12 +171,13 @@ const sellerController = {
             city,
             state,
             postalCode,
-            country
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22,$23)
-            RETURNING id, name, email
+            country, profile_picture, pan_card_path, aadhaar_front_path, aadhaar_back_path, bank_proof_path
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22,$23,$24, $25, $26, $27)
+            RETURNING vendor_id, vendor_name, email
         `;
 
         const values = [
+            profilePictureFile || null,
             name,
             email,
             phone,
@@ -186,10 +189,14 @@ const sellerController = {
             business_description || null,
             pan_number || null,
             aadhaar_number || null,
+            pan_card_path || null,
+            aadhaar_front_path || null,
+            aadhaar_back_path || null,
             account_holder_name || null,
             bank_account_number || null,
             bank_name || null,
             ifsc_code || null,
+            bank_proof_path || null,
             agreeTerms,
             addressLine1,
             addressLine2,
@@ -206,8 +213,8 @@ const sellerController = {
             success: true,
             message: 'Seller created successfully',
             data: {
-                id: result.rows[0].id,
-                name: result.rows[0].name,
+                id: result.rows[0].vendor_id,
+                name: result.rows[0].vendor_name,
                 email: result.rows[0].email
             }
         });
@@ -273,6 +280,8 @@ const sellerController = {
             });
         }
     },
+
+    
 
     // Delete a seller (soft delete)
     deleteSeller: async (req, res) => {
