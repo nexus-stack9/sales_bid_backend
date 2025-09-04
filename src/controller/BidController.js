@@ -120,7 +120,26 @@ const userBids = async (req, res) => {
     const query = 'SELECT * FROM user_bids WHERE bidder_id = $1 ORDER BY bid_time DESC';
     const result = await db.query(query, [bidder_id]);
 
-    return res.status(200).json(result.rows);
+    // Categorize bids by status
+    const categorizedBids = result.rows.reduce((acc, bid) => {
+      const status = bid.bid_status?.toLowerCase() || 'unknown';
+      if (!acc[status]) {
+        acc[status] = [];
+      }
+      acc[status].push(bid);
+      return acc;
+    }, {});
+
+    // Ensure all possible statuses exist in the response
+    const response = {
+      winning: categorizedBids.winning || [],
+      losing: categorizedBids.losing || [],
+      won: categorizedBids.won || [],
+      lost: categorizedBids.lost || [],
+      unknown: categorizedBids.unknown || []
+    };
+
+    return res.status(200).json(response);
   } catch (error) {
     console.error('Error fetching user bids:', error);
     return res.status(500).json({ error: 'Internal server error' });
