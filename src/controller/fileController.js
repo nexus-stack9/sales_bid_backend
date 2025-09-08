@@ -1,4 +1,4 @@
-const { uploadFile, getFiles } = require('../services/r2Service');
+const { uploadFile, getFiles,mulUploadFile } = require('../services/r2Service');
 
 /**
  * Upload a file to R2 storage
@@ -6,6 +6,7 @@ const { uploadFile, getFiles } = require('../services/r2Service');
  * @param {Object} res - Express response object
  */
 const uploadFileToR2 = async (req, res) => {
+
   try {
     // Check if file exists in request
     if (!req.file) {
@@ -41,6 +42,56 @@ const uploadFileToR2 = async (req, res) => {
   }
 };
 
+
+
+
+
+
+
+
+
+const mulUploadFilesToR2 = async (req, res) => {
+  try {
+    console.log('Received files:', req.file);
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ success: false, message: 'No files uploaded' });
+    }
+
+    // Path is a single string from frontend
+    let { path } = req.body;
+
+    if (!path || typeof path !== 'string') {
+      return res.status(400).json({ success: false, message: 'Path must be a string' });
+    }
+
+    // Upload each file to the same path
+    const results = await Promise.all(
+      req.files.map((file) => mulUploadFile(file, path))
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Files uploaded successfully',
+      files: results,
+    });
+  } catch (error) {
+    console.error('Error in uploadFilesToR2:', error);
+
+    if (error.message === 'A file with this name already exists in this folder') {
+      return res.status(409).json({ success: false, message: error.message });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: 'Error uploading files',
+      error: error.message,
+    });
+  }
+};
+
+
+
+
 /**
  * Get all files from a specific folder in R2
  * @param {Object} req - Express request object
@@ -73,5 +124,6 @@ const getFilesFromR2 = async (req, res) => {
 
 module.exports = {
   uploadFileToR2,
-  getFilesFromR2
+  getFilesFromR2,
+  mulUploadFilesToR2
 };

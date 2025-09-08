@@ -41,6 +41,7 @@ app.use("/wishlist", require("./routes/WishlistRoute"));
 app.use("/search", require("./routes/SearchRoutes"));
 app.use("/delivery", require("./routes/shiprocketRoutes"));
 app.use('/addres', require("./routes/addressRoutes"));
+app.use('/product', require("./routes/ProductRoute"));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

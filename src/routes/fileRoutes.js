@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { uploadFileToR2, getFilesFromR2 } = require('../controller/fileController');
+const { uploadFileToR2, getFilesFromR2,mulUploadFilesToR2 } = require('../controller/fileController');
 // const authMiddleware = require('../middleware/authMiddleware');
 
 // Configure multer for memory storage
@@ -23,6 +23,8 @@ const upload = multer({
 
 // Route to upload a file to R2
 router.post('/upload', upload.single('file'), uploadFileToR2);
+router.post('/multiple-upload',  upload.array('files'),   // "files" must match formData.append('files', file)
+  mulUploadFilesToR2 );
 
 // Route to get all files from a specific folder in R2
 router.post('/get', getFilesFromR2);

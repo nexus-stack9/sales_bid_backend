@@ -9,11 +9,11 @@ const sellerController = {
                     s.vendor_id,
                     s.vendor_name,
                     s.email,
+                    s.profile_picture,
                     s.phone_number,
                     s.business_type,
                     s.business_name,
                     s.status,
-                    s.profilepicturepath,
                     s.created_at,
                     COUNT(p.product_id) AS product_count,
                     COALESCE(SUM(CASE WHEN p.status = 'sold' THEN 1 ELSE 0 END), 0) AS sold_products,
@@ -112,7 +112,6 @@ const sellerController = {
  createSeller: async (req, res) => {
     try {
         const {
-            profilePictureFile,
             name,
             email,
             phone,
@@ -124,14 +123,10 @@ const sellerController = {
             businessDescription: business_description,
             panNumber: pan_number,
             aadhaarNumber: aadhaar_number,
-            pan_card_path,
-            aadhaar_front_path,
-            aadhaar_back_path,
             accountHolderName: account_holder_name,
             accountNumber: bank_account_number,
             bankName: bank_name,
             ifscCode: ifsc_code,
-            bank_proof_path,
             agreeTerms,
             addressLine1,
             addressLine2,
@@ -171,13 +166,12 @@ const sellerController = {
             city,
             state,
             postalCode,
-            country, profile_picture, pan_card_path, aadhaar_front_path, aadhaar_back_path, bank_proof_path
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22,$23,$24, $25, $26, $27)
-            RETURNING vendor_id, vendor_name, email
+            country
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22,$23)
+            RETURNING *
         `;
 
         const values = [
-            profilePictureFile || null,
             name,
             email,
             phone,
@@ -189,14 +183,10 @@ const sellerController = {
             business_description || null,
             pan_number || null,
             aadhaar_number || null,
-            pan_card_path || null,
-            aadhaar_front_path || null,
-            aadhaar_back_path || null,
             account_holder_name || null,
             bank_account_number || null,
             bank_name || null,
             ifsc_code || null,
-            bank_proof_path || null,
             agreeTerms,
             addressLine1,
             addressLine2,
@@ -212,11 +202,7 @@ const sellerController = {
         return res.status(201).json({
             success: true,
             message: 'Seller created successfully',
-            data: {
-                id: result.rows[0].vendor_id,
-                name: result.rows[0].vendor_name,
-                email: result.rows[0].email
-            }
+            data: result.rows[0]
         });
 
     } catch (error) {
@@ -339,7 +325,65 @@ const sellerController = {
                 error: error.message
             });
         }
+    },
+
+
+   updateSellerPath: async (req, res) => {
+  try {
+    const { 
+      vendor_id,
+      pan_card_path,
+      aadhaar_front_path,
+      aadhaar_back_path,
+      bank_proof_path,
+      profile_picture,
+    } = req.body;
+
+    const query = `
+      UPDATE public.sb_vendors
+      SET pan_card_path=$2, aadhaar_front_path=$3, aadhaar_back_path=$4, bank_proof_path=$5, profile_picture=$6
+      WHERE vendor_id=$1
+      RETURNING *;
+    `;
+
+    const values = [
+      vendor_id,
+      pan_card_path || null,
+      aadhaar_front_path || null,
+      aadhaar_back_path || null,
+      bank_proof_path || null,
+      profile_picture || null,
+    ];
+
+    const result = await db.query(query, values);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Seller not found',
+      });
     }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Seller updated successfully',
+      data: result.rows[0],
+    });
+
+  } catch (error) {
+    console.error('Error updating seller:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update seller',
+      error: error.message,
+    });
+  }
+},
+
 };
+
+
+
+
 
 module.exports = sellerController;
