@@ -351,7 +351,7 @@ const getProductByUid = async (req, res) => {
 const addProduct = async (req, res) => {
     try {
         const {
-            name,
+            product_name,
             description,
             starting_price,
             category_id,
@@ -369,25 +369,31 @@ const addProduct = async (req, res) => {
         } = req.body;
 
         // Validate required fields
-        if (!name || !starting_price || !auction_start || !auction_end) {
+        if (!product_name || !starting_price || !auction_start || !auction_end) {
             return res.status(400).json({
                 success: false,
                 message: 'Name, starting price, auction start, and auction end are required fields'
             });
         }
 
-        // Insert the new product
+        // Get the maximum ID from the database
+        const maxIdQuery = 'SELECT MAX(product_id) as max_id FROM products';
+        const maxIdResult = await db.query(maxIdQuery);
+        const nextId = (maxIdResult.rows[0].max_id || 0) + 1;
+
+        // Insert the new product with the calculated ID
         const query = `
             INSERT INTO products (
-                name, description, starting_price, category_id,
+                product_id, name, description, starting_price, category_id,
                 auction_start, auction_end, retail_value, location,
                 shipping, quantity, image_path, created_by, vendor_id, trending, tags
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
             RETURNING *
         `;
 
         const values = [
-            name,
+            nextId,
+            product_name,
             description || null,
             starting_price,
             category_id || null,
@@ -409,7 +415,8 @@ const addProduct = async (req, res) => {
         return res.status(201).json({
             success: true,
             message: 'Product added successfully',
-            data: result.rows[0]
+            data: result.rows[0],
+            id: nextId // Return the created ID explicitly
         });
 
     } catch (error) {
@@ -520,12 +527,135 @@ const removeFromWishlist = async (req, res) => {
 };
 
 
+
+
+// ✅ UPDATE
+const updateProduct = async (req, res) => {
+  try {
+    const { id } = req.params; // product_id comes from URL
+    const {
+      product_name,
+      description,
+      starting_price,
+      category_id,
+      auction_start,
+      auction_end,
+      retail_value,
+      location,
+      shipping,
+      quantity,
+      image_path,
+      created_by,
+      vendor_id,
+      trending,
+      tags
+    } = req.body;
+
+    const query = `
+      UPDATE products SET
+        name = $1,
+        description = $2,
+        starting_price = $3,
+        category_id = $4,
+        auction_start = $5,
+        auction_end = $6,
+        retail_value = $7,
+        location = $8,
+        shipping = $9,
+        quantity = $10,
+        image_path = $11,
+        created_by = $12,
+        vendor_id = $13,
+        trending = $14,
+        tags = $15
+      WHERE product_id = $16
+      RETURNING *
+    `;
+
+    const values = [
+      product_name,
+      description || null,
+      starting_price,
+      category_id || null,
+      auction_start,
+      auction_end,
+      retail_value || null,
+      location || null,
+      shipping || null,
+      quantity || null,
+      image_path || null,
+      created_by || null,
+      vendor_id || null,
+      trending || false,
+      tags || null,
+      id
+    ];
+
+    const result = await db.query(query, values);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Product updated successfully',
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error updating product:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update product',
+      error: error.message
+    });
+  }
+};
+
+// ✅ DELETE
+const deleteProduct = async (req, res) => {
+  try {
+    const { id } = req.params; // product_id comes from URL
+
+    const query = 'DELETE FROM products WHERE product_id = $1 RETURNING *';
+    const result = await db.query(query, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Product deleted successfully',
+      deleted: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to delete product',
+      error: error.message
+    });
+  }
+};
+
+
+
+
 module.exports = {
     initProductWebSocket,
     getAllProducts,
     getProductByUid,
     addProduct,
     addToWishlist,
+    updateProduct,
+    deleteProduct,
     removeFromWishlist,
     activeConnections // Export for cleanup on server shutdown
 };

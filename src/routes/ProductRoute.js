@@ -5,7 +5,9 @@ const {
     getProductByUid, 
     addProduct,
     addToWishlist, 
-    removeFromWishlist
+    removeFromWishlist,
+    updateProduct,
+    deleteProduct,
 } = require('../controller/ProductController');
 // const { authMiddleware } = require('../middleware/authMiddleware');
 
@@ -14,6 +16,8 @@ router.get('/', getAllProducts);
 router.get('/:uid', getProductByUid);
 router.post('/', addProduct);
 router.post('/addProduct', addProduct);
+router.put("/products/:id", updateProduct);
+router.delete("/products/:id", deleteProduct);
 
 // Wishlist routes - protected with authentication
 router.post('/wishlist/add', addToWishlist);

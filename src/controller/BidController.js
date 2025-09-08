@@ -127,6 +127,24 @@ const userBids = async (req, res) => {
   }
 };
 
+const getBidById = async (req, res) => {
+  try {
+    const { bidder_id } = req.params;
+
+    if (!bidder_id) {
+      return res.status(400).json({ error: 'bidder_id is required' });
+    }
+
+    const query = 'SELECT * FROM user_bids WHERE bid_id = $1';
+    const result = await db.query(query, [bidder_id]);
+
+    return res.status(200).json(result.rows);
+  } catch (error) {
+    console.error('Error fetching user bids:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 // Function to send outbid notifications to other bidders
 const sendOutbidNotifications = async (product_id, current_bidder_id, bid_amount) => {
   try {
@@ -323,4 +341,5 @@ const insertBid = async (req, res) => {
 module.exports = {
   insertBid,
   userBids,
+  getBidById
 };

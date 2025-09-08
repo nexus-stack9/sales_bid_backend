@@ -92,6 +92,51 @@ const uploadFile = async (file, name, id) => {
   }
 };
 
+const mulUploadFile = async (file, folderPath) => {
+  try {
+    if (!file) throw new Error('No file provided');
+
+    // Ensure folder path ends with /
+    const cleanPath = folderPath.endsWith('/') ? folderPath : `${folderPath}/`;
+
+    // Unique filename
+    const timestamp = Date.now();
+    const fileName = `${timestamp}-${file.originalname.replace(/\s+/g, '-')}`;
+    const fullPath = `${cleanPath}${fileName}`;
+
+    // Check for duplicate
+    try {
+      await s3.headObject({ Bucket: bucketName, Key: fullPath }).promise();
+      throw new Error('A file with this name already exists in this folder');
+    } catch (error) {
+      if (error.code !== 'NotFound') throw error;
+    }
+
+    // Upload to R2
+    const result = await s3
+      .upload({
+        Bucket: bucketName,
+        Key: fullPath,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+      })
+      .promise();
+
+    return {
+      success: true,
+      url:
+        result.Location ||
+        `https://<your-r2-endpoint>/${bucketName}/${fullPath}`,
+      key: result.Key,
+      fileName,
+    };
+  } catch (error) {
+    console.error('Error uploading file to R2:', error);
+    throw error;
+  }
+};
+
+
 /**
  * Get all files from a specific folder in R2 bucket
  * @param {string} name - Folder name
@@ -138,5 +183,6 @@ const getFiles = async (name, id) => {
 
 module.exports = {
   uploadFile,
+  mulUploadFile,
   getFiles
 };
