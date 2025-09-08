@@ -9,11 +9,11 @@ const sellerController = {
                     s.vendor_id,
                     s.vendor_name,
                     s.email,
+                    s.profile_picture,
                     s.phone_number,
                     s.business_type,
                     s.business_name,
                     s.status,
-                    s.profilepicturepath,
                     s.created_at,
                     COUNT(p.product_id) AS product_count,
                     COALESCE(SUM(CASE WHEN p.status = 'sold' THEN 1 ELSE 0 END), 0) AS sold_products,
@@ -328,58 +328,58 @@ const sellerController = {
     },
 
 
-     updateSellerPath: async (req, res) => {
-    try {
-        // const { vendor_id } = req.params;
-        const{ 
-            vendor_id,
-            pan_card_path,
-            aadhaar_front_path,
-            aadhaar_back_path,
-            bank_proof_path,
-            profilePictureFile,
-        } = req.body;
+   updateSellerPath: async (req, res) => {
+  try {
+    const { 
+      vendor_id,
+      pan_card_path,
+      aadhaar_front_path,
+      aadhaar_back_path,
+      bank_proof_path,
+      profile_picture,
+    } = req.body;
 
+    const query = `
+      UPDATE public.sb_vendors
+      SET pan_card_path=$2, aadhaar_front_path=$3, aadhaar_back_path=$4, bank_proof_path=$5, profile_picture=$6
+      WHERE vendor_id=$1
+      RETURNING *;
+    `;
 
-        // Validate required fields
-        
+    const values = [
+      vendor_id,
+      pan_card_path || null,
+      aadhaar_front_path || null,
+      aadhaar_back_path || null,
+      bank_proof_path || null,
+      profile_picture || null,
+    ];
 
-        // Check if email already exists
-       
+    const result = await db.query(query, values);
 
-        // Insert the new seller
-        const query = `
-UPDATE public.sb_vendors
-SET pan_card_path=$2, aadhaar_front_path=$3, aadhaar_back_path=$4, bank_proof_path=$5, profile_picture=$6
-WHERE vendor_id=$1
-        `;
-
-        const values = [
-            vendor_id,
-            pan_card_path || null,
-            aadhaar_front_path || null,
-            aadhaar_back_path || null, 
-            bank_proof_path || null,  
-            profilePictureFile || null,
-        ];
-
-        const result = await db.query(query, values);
-
-        return res.status(201).json({
-            success: true,
-            message: 'Seller created successfully',
-            data: result.rows[0]
-        });
-
-    } catch (error) {
-        console.error('Error creating seller:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Failed to create seller',
-            error: error.message
-        });
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Seller not found',
+      });
     }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Seller updated successfully',
+      data: result.rows[0],
+    });
+
+  } catch (error) {
+    console.error('Error updating seller:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update seller',
+      error: error.message,
+    });
+  }
 },
+
 };
 
 
