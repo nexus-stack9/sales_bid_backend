@@ -1,4 +1,7 @@
 const db = require('../db/database');
+const axios = require('axios');
+const { Readable } = require('stream');
+const ExcelJS = require('exceljs');
 
 // Store active connections and their intervals
 const activeConnections = new Map();
@@ -21,7 +24,7 @@ const initProductWebSocket = (wss) => {
         const fetchAndSendProductDetails = async () => {
             try {
                 // Use parameterized query with $1 for PostgreSQL
-                const query = 'SELECT * FROM vw_get_product_details WHERE product_id = $1';
+                const query = 'SELECT *, manifest_url FROM vw_get_product_details WHERE product_id = $1';
                 console.log('Executing query:', query, 'with product_id:', productId);
                 
                 // Ensure the database connection is established
@@ -45,10 +48,27 @@ const initProductWebSocket = (wss) => {
                 
                 console.log('Query successful, rows found:', result.rows.length);
                 
-                // Send the first row of results
+                const productData = result.rows[0];
+                let manifestData = null;
+                
+                // Fetch manifest data if manifest_url exists
+                if (productData.manifest_url) {
+                    try {
+                        manifestData = await readXlsxFromUrl(productData.manifest_url);
+                        console.log('Successfully fetched manifest data');
+                    } catch (manifestError) {
+                        console.error('Error fetching manifest data:', manifestError);
+                        // Continue without manifest data if there's an error
+                    }
+                }
+                
+                // Send the product data with manifest data if available
                 ws.send(JSON.stringify({
                     type: 'product_update',
-                    data: result.rows[0],
+                    data: {
+                        ...productData,
+                        manifest_data: manifestData
+                    },
                     timestamp: new Date().toISOString()
                 }));
             } catch (error) {
@@ -648,6 +668,96 @@ const deleteProduct = async (req, res) => {
 
 
 
+/**
+ * Read XLSX file from URL and return as JSON
+ * @param {string} fileUrl - URL of the XLSX file to read
+ * @returns {Promise<Array>} - Promise that resolves to the parsed data
+ */
+const readXlsxFromUrl = async (fileUrl) => {
+    try {
+        if (!fileUrl) {
+            throw new Error('File URL is required');
+        }
+        
+        // Download the file
+        const response = await axios({
+            method: 'GET',
+            url: fileUrl,
+            responseType: 'arraybuffer'
+        });
+
+        // Create a buffer from the response data
+        const buffer = Buffer.from(response.data, 'binary');
+        
+        // Load the workbook directly from buffer
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(buffer);
+
+        // Get the first worksheet
+        const worksheet = workbook.worksheets[0];
+        
+        // Convert worksheet to JSON
+        const result = [];
+        const headers = [];
+        
+        // Get headers from the first row
+        const headerRow = worksheet.getRow(1);
+        headerRow.eachCell((cell, colNumber) => {
+            headers[colNumber] = cell.value || `Column${colNumber}`;
+        });
+
+        // Process each row (starting from row 2 to skip header)
+        for (let i = 2; i <= worksheet.rowCount; i++) {
+            const row = worksheet.getRow(i);
+            const rowData = {};
+            
+            row.eachCell((cell, colNumber) => {
+                rowData[headers[colNumber] || `Column${colNumber}`] = cell.value;
+            });
+            
+            // Only add row if it has data
+            if (Object.keys(rowData).length > 0) {
+                result.push(rowData);
+            }
+        }
+
+        return result;
+    } catch (error) {
+        console.error('Error reading XLSX from URL:', error);
+        throw error;
+    }
+};
+
+/**
+ * Express route handler for reading XLSX from URL
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+const handleReadXlsxFromUrl = async (req, res) => {
+    try {
+        const { fileUrl } = req.query;
+        if (!fileUrl) {
+            return res.status(400).json({
+                success: false,
+                message: 'File URL is required as a query parameter'
+            });
+        }
+        
+        const data = await readXlsxFromUrl(fileUrl);
+        res.status(200).json({
+            success: true,
+            data
+        });
+    } catch (error) {
+        console.error('Error in handleReadXlsxFromUrl:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error reading XLSX file',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     initProductWebSocket,
     getAllProducts,
@@ -657,5 +767,6 @@ module.exports = {
     updateProduct,
     deleteProduct,
     removeFromWishlist,
-    activeConnections // Export for cleanup on server shutdown
+    activeConnections, // Export for cleanup on server shutdown
+    readXlsxFromUrl: handleReadXlsxFromUrl,
 };

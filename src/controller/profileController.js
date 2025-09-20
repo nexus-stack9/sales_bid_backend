@@ -219,16 +219,15 @@ const getUserCounts = async (req, res) => {
       }
 
       const query = `
- SELECT
-COUNT(w.product_id) AS wishlist_count,
-(
-  SELECT COUNT(DISTINCT b.product_id)
-  FROM bids b
-  WHERE b.bidder_id = $1
-) AS bids_count
-FROM wishlist w
-WHERE w.user_id = $1;
-
+      SELECT
+        COUNT(w.product_id) AS wishlist_count,
+        (
+          SELECT COUNT(DISTINCT b.product_id)
+          FROM bids b
+          WHERE b.bidder_id = $1
+        ) AS bids_count
+      FROM wishlist w
+      WHERE w.user_id = $1;
       `;
 
       const result = await pool.query(query, [user_id]);
@@ -258,9 +257,45 @@ WHERE w.user_id = $1;
   }
 };
 
+/**
+ * Get user orders
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+const getUserOrders = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    if (!userId) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'User ID is required' 
+      });
+    }
+
+    // Get all orders for the user
+    const ordersQuery = 'SELECT * FROM user_orders WHERE user_id = $1 ORDER BY order_date DESC';
+    const ordersResult = await pool.query(ordersQuery, [userId]);
+
+    res.status(200).json({
+      success: true,
+      data: ordersResult.rows,
+      count: ordersResult.rowCount
+    });
+  } catch (error) {
+    console.error('Error fetching user orders:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching user orders',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   updateProfile,
   updatePassword,
   getProfileDetails,
-  getUserCounts
+  getUserCounts,
+  getUserOrders
 };
