@@ -8,6 +8,7 @@ const {
     removeFromWishlist,
     updateProduct,
     deleteProduct,
+    readXlsxFromUrl
 } = require('../controller/ProductController');
 // const { authMiddleware } = require('../middleware/authMiddleware');
 
@@ -23,5 +24,7 @@ router.delete("/products/:id", deleteProduct);
 router.post('/wishlist/add', addToWishlist);
 router.post('/wishlist/remove', removeFromWishlist);
 
+// XLSX file reading route
+router.get('/xlsx/read', readXlsxFromUrl);
 
 module.exports = router;
