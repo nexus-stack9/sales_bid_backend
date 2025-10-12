@@ -12,6 +12,15 @@ const addressRoutes = require('./routes/addressRoutes');
 
 const app = express();
 
+
+
+
+// Increase JSON payload limit
+app.use(express.json({ limit: '50mb' }));
+
+// Increase URL-encoded payload limit
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
 // Create HTTP server
 const server = http.createServer(app);
 
@@ -42,6 +51,7 @@ app.use("/search", require("./routes/SearchRoutes"));
 app.use("/delivery", require("./routes/shiprocketRoutes"));
 app.use('/addres', require("./routes/addressRoutes"));
 app.use('/product', require("./routes/ProductRoute"));
+app.use('/pos', require("./routes/PosRoute"));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

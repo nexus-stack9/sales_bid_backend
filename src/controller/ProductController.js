@@ -350,8 +350,10 @@ const getProductByUid = async (req, res) => {
 // Add a new product
 const addProduct = async (req, res) => {
     try {
+        console.log(req.body)
+        console.log(req.body)
         const {
-            product_name,
+            name,
             description,
             starting_price,
             category_id,
@@ -369,7 +371,7 @@ const addProduct = async (req, res) => {
         } = req.body;
 
         // Validate required fields
-        if (!product_name || !starting_price || !auction_start || !auction_end) {
+        if (!name || !starting_price || !auction_start || !auction_end) {
             return res.status(400).json({
                 success: false,
                 message: 'Name, starting price, auction start, and auction end are required fields'
@@ -393,7 +395,7 @@ const addProduct = async (req, res) => {
 
         const values = [
             nextId,
-            product_name,
+            name,
             description || null,
             starting_price,
             category_id || null,
