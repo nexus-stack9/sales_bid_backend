@@ -65,3 +65,42 @@ server.listen(PORT, () => {
     .then(() => console.log("Database connected successfully"))
     .catch((err) => console.error("Database connection error:", err));
 });
+
+// Graceful shutdown handling
+process.on('SIGINT', () => {
+  console.log('\nReceived SIGINT. Shutting down gracefully...');
+  server.close(() => {
+    console.log('HTTP server closed');
+    wss.close(() => {
+      console.log('WebSocket server closed');
+      db.end()
+        .then(() => {
+          console.log('Database connection closed');
+          process.exit(0);
+        })
+        .catch((err) => {
+          console.error('Error closing database:', err);
+          process.exit(1);
+        });
+    });
+  });
+});
+
+process.on('SIGTERM', () => {
+  console.log('\nReceived SIGTERM. Shutting down gracefully...');
+  server.close(() => {
+    console.log('HTTP server closed');
+    wss.close(() => {
+      console.log('WebSocket server closed');
+      db.end()
+        .then(() => {
+          console.log('Database connection closed');
+          process.exit(0);
+        })
+        .catch((err) => {
+          console.error('Error closing database:', err);
+          process.exit(1);
+        });
+    });
+  });
+});
