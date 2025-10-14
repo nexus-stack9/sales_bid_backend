@@ -5,16 +5,19 @@ const pool = require('../db/database')
 const getAllProductsByVendorId = async (req, res) => {
   try {
     const { vendorId } = req.params;
+    
+    console.log("Fetching products for vendorId:", vendorId); // DEBUG
+    
     const result = await pool.query(
       "SELECT * FROM vw_get_product_details1 WHERE vendor_id = $1",
       [vendorId]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(204).send(); // No content
-    }
+    console.log("Query result:", result.rows); // DEBUG
 
-    res.json(result.rows);
+    // ✅ Always return 200 with array (empty or with data)
+    res.status(200).json(result.rows);
+    
   } catch (error) {
     console.error("Error fetching products by vendorId:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -48,10 +51,15 @@ const getVendorById = async (req, res) => {
   }
 };
 
-getVendorByStatus = async (req, res) => {
+// FIXED: Added 'const' keyword and fixed SQL injection vulnerability
+const getVendorByStatus = async (req, res) => {
   try {
     const { status } = req.params;      
-    const result = await pool.query(`SELECT * FROM sb_vendors WHERE approval_status = '${status}'`);
+    // FIXED: Use parameterized query to prevent SQL injection
+    const result = await pool.query(
+      'SELECT * FROM sb_vendors WHERE approval_status = $1',
+      [status]
+    );
     res.json(result.rows);
   } catch (err) {
     console.error(err.message);
@@ -59,11 +67,12 @@ getVendorByStatus = async (req, res) => {
   }
 };
 
-updateVendorStatus = async (req, res) => {
+// FIXED: Added 'const' keyword
+const updateVendorStatus = async (req, res) => {
   try {
     const { vendorId, status } = req.params;        
     const result = await pool.query(
-      `UPDATE sb_vendors SET approval_status = $1 WHERE vendor_id = $2 RETURNING *`,
+      'UPDATE sb_vendors SET approval_status = $1 WHERE vendor_id = $2 RETURNING *',
       [status, vendorId]
     );
     if (result.rowCount === 0) {
@@ -76,6 +85,10 @@ updateVendorStatus = async (req, res) => {
   }
 };
 
-// Get all products by vendorId
-
-module.exports = { getAllProductsByVendorId ,getAllVendor,getVendorByStatus,getVendorById,updateVendorStatus};
+module.exports = { 
+  getAllProductsByVendorId,
+  getAllVendor,
+  getVendorByStatus,
+  getVendorById,
+  updateVendorStatus
+};
