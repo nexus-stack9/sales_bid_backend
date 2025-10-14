@@ -135,7 +135,7 @@ const vendorSignin = async (req, res) => {
     }
 
     // Decrypt the stored password and compare with plain password
-    const decryptedDbPassword = decryptPassword(user.password);
+    const decryptedDbPassword = decryptPassword(password);
     console.log("decryptedDbPassword:", decryptedDbPassword);
     
     if (!decryptedDbPassword) {
