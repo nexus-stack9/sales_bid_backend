@@ -70,10 +70,10 @@ const getVendorByStatus = async (req, res) => {
 // FIXED: Added 'const' keyword
 const updateVendorStatus = async (req, res) => {
   try {
-    const { vendorId, status } = req.params;        
+    const { vendorId, status,jusification } = req.params;        
     const result = await pool.query(
-      'UPDATE sb_vendors SET approval_status = $1 WHERE vendor_id = $2 RETURNING *',
-      [status, vendorId]
+      'UPDATE sb_vendors SET approval_status = $1 , status_comment = $2 WHERE vendor_id = $3 RETURNING *',
+      [status, jusification,vendorId]
     );
     if (result.rowCount === 0) {
       return res.status(404).json({ message: 'Vendor not found' });
