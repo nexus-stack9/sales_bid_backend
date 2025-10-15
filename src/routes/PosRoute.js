@@ -10,6 +10,6 @@ router.get('/getAllProductsByVendorId/:vendorId', getAllProductsByVendorId);
 router.get('/getAllVendor', getAllVendor);
 router.get('/getVendorByStatus/:status', getVendorByStatus);
 router.get('/getVendorById/:vendorId', getVendorById);
-router.put('/updateVendorStatus/:vendorId/status/:status', updateVendorStatus);
+router.put('/updateVendorStatus/:vendorId/status/:status/jusification/:jusification', updateVendorStatus);
 
 module.exports = router;

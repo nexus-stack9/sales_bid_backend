@@ -101,7 +101,7 @@ const mulUploadFile = async (file, folderPath) => {
 
     // Unique filename
     const timestamp = Date.now();
-    const fileName = `${timestamp}-${file.originalname.replace(/\s+/g, '-')}`;
+    const fileName = file.originalname;
     const fullPath = `${cleanPath}${fileName}`;
 
     // Check for duplicate
