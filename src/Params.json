@@ -109,6 +109,7 @@
         "height": "height",
         "length": "length",
         "breadth": "breadth",
+        "auctionstatus": "auctionstatus",
         "auction_status": "auction_status",
         "is_active": "is_active",
         "manifest_url": "manifest_url",
@@ -141,8 +142,8 @@
         "height": "height",
         "length": "length",
         "breadth": "breadth",
-        "auction_status": "auctionstatus",
-        "is_active": "isactive",
+        "auctionstatus": "auctionstatus",
+        "isactive": "isactive",
         "manifest_url": "manifest_url",
         "product_live_url": "product_live_url"
     },

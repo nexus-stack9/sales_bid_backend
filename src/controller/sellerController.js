@@ -5,23 +5,35 @@ const sellerController = {
     getAllSellers: async (req, res) => {
         try {
             const query = `
-                SELECT 
-                    s.vendor_id,
-                    s.vendor_name,
-                    s.email,
-                    s.profile_picture,
-                    s.phone_number,
-                    s.business_type,
-                    s.business_name,
-                    s.status,
-                    s.created_at,
-                    COUNT(p.product_id) AS product_count,
-                    COALESCE(SUM(CASE WHEN p.status = 'sold' THEN 1 ELSE 0 END), 0) AS sold_products,
-                    COALESCE(SUM(CASE WHEN p.status = 'active' THEN 1 ELSE 0 END), 0) AS active_products
-                FROM sb_vendors s
-                LEFT JOIN products p ON s.vendor_id = p.product_id
-                GROUP BY s.vendor_id
-                ORDER BY s.created_at DESC
+               SELECT 
+    v.vendor_id,
+    v.vendor_name,
+    v.email,
+    v.phone_number,
+    v.business_name,
+    v.business_type,
+    v.profile_picture,
+    v.approval_status,
+    v.isactive as vendor_active,
+    
+    -- Product counts
+    COUNT(p.product_id) as total,
+    SUM(CASE WHEN p.isactive = true THEN 1 ELSE 0 END) as active_products,
+    SUM(CASE WHEN p.isactive = false OR p.isactive IS NULL THEN 1 ELSE 0 END) as inactive_products
+    
+FROM public.sb_vendors v where v.isactive = true and v.approval_status = 'approved'
+LEFT JOIN public.products p ON v.vendor_id = p.vendor_id
+GROUP BY 
+    v.vendor_id, 
+    v.vendor_name, 
+    v.email, 
+    v.phone_number, 
+    v.business_name, 
+    v.business_type, 
+    v.profile_picture,
+    v.approval_status,
+    v.isactive
+ORDER BY v.vendor_id;
             `;
             
             const result = await db.query(query);
@@ -116,7 +128,7 @@ const sellerController = {
             email,
             phone,
             dob,
-            businessType: business_type = 'individual',
+            businessType: business_type,
             businessName: business_name,
             gstNumber: gst_number,
             itemsCategory: items_category,
@@ -134,6 +146,8 @@ const sellerController = {
             state,
             postalCode,
             country,
+            approval_status = 'pending',
+            isactive = true,
             status = 'pending'
         } = req.body;
 
@@ -166,7 +180,7 @@ const sellerController = {
             city,
             state,
             postalCode,
-            country
+            country,approval_status,isactive
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22,$23)
             RETURNING *
         `;
@@ -194,7 +208,9 @@ const sellerController = {
             state,
             postalCode,
             country,
-            status
+            status,
+            approval_status,
+            isactive
         ];
 
         const result = await db.query(query, values);
