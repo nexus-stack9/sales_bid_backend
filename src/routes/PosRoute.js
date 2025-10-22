@@ -3,7 +3,7 @@ const router = express.Router();
 
 
 
-const { getAllProductsByVendorId,updateVendorActiveStatus,getAllVendor,getVendorByStatus,getVendorById,updateVendorStatus,getAllmatrixByVendorId,getAllOrderMatrixByVendorId,getAllOrderByVendorId } = require('../controller/posController');
+const { getAllProductsByVendorId,updateVendorActiveStatus,getAllVendor,getVendorByStatus,getVendorById,updateVendorStatus,getAllmatrixByVendorId,getAllOrderMatrixByVendorId,getAllOrderByVendorId,getOrderById,updateOrderStatus,bulkUpdateOrderStatus,exportOrders,deleteOrders } = require('../controller/posController');
 
 // Route to get all products by vendor ID
 router.get('/getAllProductsByVendorId/:vendorId', getAllProductsByVendorId);
