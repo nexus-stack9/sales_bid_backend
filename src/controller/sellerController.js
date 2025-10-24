@@ -171,19 +171,21 @@ ORDER BY v.vendor_id;
 
         // Insert the new seller
         const query = `
-            INSERT INTO sb_vendors (
-                vendor_name, email, phone_number, dob, business_type, business_name,
-                gst_number, items_category, business_description, pan_number, 
-                aadhaar_number,
-                account_holder_name, bank_account_number, bank_name, ifsc_code, agree_terms, status, addressLine1,
-            addressLine2,
-            city,
-            state,
-            postalCode,
-            country,approval_status,isactive
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22,$23)
-            RETURNING *
-        `;
+  INSERT INTO sb_vendors (
+    vendor_name, email, phone_number, dob, business_type, business_name,
+    gst_number, items_category, business_description, pan_number, 
+    aadhaar_number,
+    account_holder_name, bank_account_number, bank_name, ifsc_code, agree_terms, status,
+    addressLine1, addressLine2, city, state, postalCode, country, approval_status, isactive
+  ) 
+  VALUES (
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 
+    $11, $12, $13, $14, $15, $16, $17, 
+    $18, $19, $20, $21, $22, $23, $24
+  )
+  RETURNING *;
+`;
+
 
         const values = [
             name,
