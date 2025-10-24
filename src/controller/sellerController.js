@@ -5,7 +5,7 @@ const sellerController = {
     getAllSellers: async (req, res) => {
         try {
             const query = `
-               SELECT 
+  SELECT 
     v.vendor_id,
     v.vendor_name,
     v.email,
@@ -14,16 +14,19 @@ const sellerController = {
     v.business_type,
     v.profile_picture,
     v.approval_status,
-    v.isactive as vendor_active,
-    
+    v.isactive AS vendor_active,
+
     -- Product counts
-    COUNT(p.product_id) as total,
-    SUM(CASE WHEN p.isactive = true THEN 1 ELSE 0 END) as active_products,
-    SUM(CASE WHEN p.isactive = false OR p.isactive IS NULL THEN 1 ELSE 0 END) as inactive_products
-    
-FROM public.sb_vendors v where v.isactive = true and v.approval_status = 'approved'
-LEFT JOIN public.products p ON v.vendor_id = p.vendor_id
-GROUP BY 
+    COUNT(p.product_id) AS total,
+    SUM(CASE WHEN p.isactive = true THEN 1 ELSE 0 END) AS active_products,
+    SUM(CASE WHEN p.isactive = false OR p.isactive IS NULL THEN 1 ELSE 0 END) AS inactive_products
+
+  FROM public.sb_vendors v
+  LEFT JOIN public.products p 
+    ON v.vendor_id = p.vendor_id
+  WHERE v.isactive = true 
+    AND v.approval_status = 'approved'
+  GROUP BY 
     v.vendor_id, 
     v.vendor_name, 
     v.email, 
@@ -33,8 +36,8 @@ GROUP BY
     v.profile_picture,
     v.approval_status,
     v.isactive
-ORDER BY v.vendor_id;
-            `;
+  ORDER BY v.vendor_id;
+`;
             
             const result = await db.query(query);
             
