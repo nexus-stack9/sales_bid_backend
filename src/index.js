@@ -49,6 +49,7 @@ app.use('/addres', require("./routes/addressRoutes"));
 app.use('/product', require("./routes/ProductRoute"));
 app.use('/orders', require("./routes/OrderRoutes"));
 app.use('/pos', require("./routes/PosRoute"));
+app.use('/livestream', require("./routes/LiveStreamRoute"));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
