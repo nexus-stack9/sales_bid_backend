@@ -134,19 +134,25 @@ const vendorSignin = async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
 
-    // Decrypt the stored password and compare with plain password
-    const decryptedDbPassword = decryptPassword(password);
-    console.log("decryptedDbPassword:", decryptedDbPassword);
+    // ✅ Decrypt the password sent from frontend
+    const decryptedRequestPassword = decryptPassword(password);
+    console.log("Decrypted request password:", decryptedRequestPassword);
     
-    if (!decryptedDbPassword) {
+    if (!decryptedRequestPassword) {
       return res.status(500).json({ error: 'Error processing credentials' });
     }
-    console.log(decryptPassword(decryptedDbPassword));
-    const decryptedPassword = decryptPassword(password);
-    console.log("decryptedPassword:", decryptedPassword);
-    
-    const isValidPassword = decryptedDbPassword === decryptedPassword;
-    console.log("isValidPassword:", isValidPassword);
+
+    // ✅ Decrypt the stored password from database
+    const decryptedDbPassword = decryptPassword(user.password);
+    console.log("Decrypted DB password:", decryptedDbPassword);
+
+    if (!decryptedDbPassword) {
+      return res.status(500).json({ error: 'Error processing stored credentials' });
+    }
+
+    // ✅ Compare the two decrypted (plain text) passwords
+    const isValidPassword = decryptedRequestPassword === decryptedDbPassword;
+    console.log("Password match:", isValidPassword);
 
     if (!isValidPassword) {
       return res.status(401).json({ error: 'Invalid email or password.' });
@@ -167,11 +173,12 @@ const vendorSignin = async (req, res) => {
       message: 'Login successful',
       token,
       user: {
-        userId: user.user_id,
+        userId: user.vendor_id, // ✅ Changed from user.user_id to match JWT
         email: user.email,
         firstName: user.first_name,
         lastName: user.last_name,
-        role: user.role
+        role: user.role,
+        name: user.vendor_name
       }
     });
 
@@ -180,6 +187,26 @@ const vendorSignin = async (req, res) => {
     res.status(500).json({ error: 'Internal server error.' });
   }
 };
+
+
+function decryptPassword(encryptedPassword) {
+  try {
+    const secretKey = process.env.SECRET_KEY;
+    if (!secretKey) {
+      console.error('SECRET_KEY is not configured');
+      return null;
+    }
+    if (!encryptedPassword) {
+      console.error('No encrypted password provided');
+      return null;
+    }
+    const bytes = CryptoJS.AES.decrypt(encryptedPassword, secretKey);
+    return bytes.toString(CryptoJS.enc.Utf8);
+  } catch (error) {
+    console.error('Decryption error:', error);
+    return null;
+  }
+}
 
 
 function decryptPassword(encryptedPassword) {

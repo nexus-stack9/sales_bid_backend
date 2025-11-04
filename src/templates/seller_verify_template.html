@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Details Verification</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Proxima+Nova:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Proxima Nova', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+            font-family: 'Proxima Nova', sans-serif;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+            font-family: 'Proxima Nova', sans-serif;
+        }
+        
+        .email-header {
+            padding: 24px 24px 16px;
+            text-align: center;
+        }
+        
+        .logo {
+            width: 140px;
+            height: auto;
+        }
+        
+        .email-body {
+            padding: 24px 30px 30px;
+            color: #1F2937;
+        }
+        
+        h1 {
+            font-size: 22px;
+            font-weight: 600;
+            margin: 0 0 16px 0;
+            color: #111827;
+            line-height: 1.3;
+        }
+        
+        p {
+            font-size: 15px;
+            line-height: 1.5;
+            margin: 0 0 16px 0;
+            color: #4B5563;
+        }
+        
+        .verification-status {
+            background: #FFFFFF;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0 0 0;
+        }
+        
+        .verification-info {
+            margin: 0 0 8px 0;
+        }
+        
+        .status-section {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        
+        .status-section:last-child {
+            margin-bottom: 4px;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        
+        .status-section .detail-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+        
+        .status-section .detail-value {
+            display: block;
+            font-size: 16px;
+            line-height: 1.4;
+        }
+        
+        .status-name {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .status-detail {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid #E5E7EB;
+        }
+        
+        .status-detail:last-child {
+            border-bottom: none;
+        }
+        
+        .detail-label {
+            font-weight: 500;
+            color: #4B5563;
+        }
+        
+        .detail-value {
+            font-weight: 600;
+            color: #111827;
+        }
+        
+        .status-amount {
+            color: #059669;
+            font-size: 20px;
+        }
+        
+        .status-image {
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            height: 200px;
+            object-fit: cover;
+            background-color: #F3F4F6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9CA3AF;
+        }
+        
+        .help-text {
+            margin-top: 40px;
+            padding-top: 32px;
+            border-top: 1px solid #E5E7EB;
+            font-size: 14px;
+            color: #6B7280;
+        }
+        
+        .help-text p {
+            margin-bottom: 0;
+        }
+        
+        .email-footer {
+            background-color: #F9FAFB;
+            padding: 32px 24px;
+            text-align: center;
+            border-top: 1px solid #E5E7EB;
+        }
+        
+        .social-links {
+            margin-bottom: 20px;
+        }
+        
+        .social-icon {
+            display: inline-block;
+            margin: 0 8px;
+            width: 32px;
+            height: 32px;
+            background-color: #E5E7EB;
+            border-radius: 50%;
+            line-height: 32px;
+            text-align: center;
+            font-size: 16px;
+            color: #4B5563;
+        }
+        
+        .footer-text {
+            font-size: 12px;
+            color: #9CA3AF;
+            max-width: 400px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+        
+        a {
+            color: #4F46E5;
+            text-decoration: none;
+        }
+        
+        .button {
+            display: inline-block;
+            background-color: #4F46E5;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            margin-top: 24px;
+        }
+        
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 20px 10px;
+            }
+            
+            .email-container {
+                border-radius: 12px;
+            }
+            
+            .email-header {
+                padding: 24px 16px;
+            }
+            
+            .logo {
+                width: 120px;
+            }
+            
+            .email-body {
+                padding: 32px 24px;
+            }
+            
+            h1 {
+                font-size: 22px;
+                margin-bottom: 20px;
+            }
+            
+            p {
+                font-size: 15px;
+                margin-bottom: 20px;
+            }
+            
+            .verification-status {
+                padding: 24px;
+                margin: 32px 0;
+            }
+            
+            .status-image {
+                height: 160px;
+                margin-bottom: 20px;
+            }
+            
+            .status-detail {
+                padding: 12px 0;
+            }
+            
+            .detail-label,
+            .detail-value {
+                font-size: 15px;
+            }
+            
+            .status-section .detail-label {
+                font-size: 13px;
+            }
+            
+            .status-section .detail-value {
+                font-size: 15px;
+            }
+            
+            .status-name {
+                font-size: 17px;
+            }
+            
+            .status-amount {
+                font-size: 18px;
+            }
+            
+            .help-text {
+                margin-top: 32px;
+                padding-top: 24px;
+                font-size: 13px;
+            }
+            
+            .email-footer {
+                padding: 24px 16px;
+            }
+            
+            .social-links {
+                margin-bottom: 16px;
+            }
+            
+            .social-icon {
+                width: 28px;
+                height: 28px;
+                line-height: 28px;
+                font-size: 14px;
+                margin: 0 6px;
+            }
+            
+            .footer-text {
+                font-size: 11px;
+            }
+            
+            .button {
+                padding: 10px 20px;
+                font-size: 15px;
+                margin-top: 20px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 10px 5px;
+            }
+            
+            .email-body {
+                padding: 24px 16px;
+            }
+            
+            h1 {
+                font-size: 20px;
+                margin-bottom: 16px;
+            }
+            
+            p {
+                font-size: 14px;
+                margin-bottom: 16px;
+            }
+            
+            .verification-status {
+                padding: 20px 16px;
+                margin: 24px 0;
+            }
+            
+            .status-image {
+                height: 140px;
+                margin-bottom: 16px;
+            }
+            
+            .status-detail {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 10px 0;
+                gap: 4px;
+            }
+            
+            .detail-label,
+            .detail-value {
+                font-size: 14px;
+            }
+            
+            .status-section .detail-label {
+                font-size: 12px;
+            }
+            
+            .status-section .detail-value {
+                font-size: 14px;
+            }
+            
+            .status-name {
+                font-size: 16px;
+            }
+            
+            .status-amount {
+                font-size: 16px;
+            }
+            
+            .help-text {
+                margin-top: 24px;
+                padding-top: 20px;
+                font-size: 12px;
+            }
+            
+            .email-footer {
+                padding: 20px 12px;
+            }
+            
+            .social-icon {
+                width: 26px;
+                height: 26px;
+                line-height: 26px;
+                font-size: 12px;
+                margin: 0 4px;
+            }
+            
+            .footer-text {
+                font-size: 10px;
+            }
+            
+            .button {
+                width: 100%;
+                text-align: center;
+                padding: 12px;
+                margin-top: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+           <img src="[LOGO_URL]" alt="Company Logo" class="logo">
+        </div>
+        
+        <div class="email-body">
+            <h1>Seller Details Verification Under Process</h1>
+            <p>Hello [Seller Name],</p>
+            <p>Thank you for submitting your details to become a verified seller with SalesBid. Your application is currently under review. We will notify you once the verification process is completed.</p>
+            
+            <div class="verification-status">
+                <div class="status-image" style="text-align: center; margin: 0 0 15px 0; background: none; box-shadow: none;">
+                    [Seller Image]
+                </div>
+                
+                <div class="verification-info">
+                    <div class="status-section">
+                        <div class="detail-label">Seller Name:</div>
+                        <div class="detail-value status-name">[Seller Name]</div>
+                    </div>
+                    
+                    <div class="status-section">
+                        <div class="detail-label">Email:</div>
+                        <div class="detail-value">[Seller Email]</div>
+                    </div>
+                    
+                    <div class="status-section">
+                        <div class="detail-label">Status:</div>
+                        <div class="detail-value">Under Review</div>
+                    </div>
+                    
+                    <div class="status-section">
+                        <div class="detail-label">Estimated Review Time:</div>
+                        <div class="detail-value">[Estimated Time]</div>
+                    </div>
+                </div>
+            </div>
+            
+            <p>If you have any questions or need assistance, please contact us at <a href="mailto:support@SalesBid.com">support@SalesBid.com</a> or visit our <a href="#">Help Center</a>.</p>
+        </div>
+        
+        <div class="email-footer">
+            <div class="social-links">
+                <a href="#" class="social-icon">f</a>
+                <a href="#" class="social-icon">t</a>
+                <a href="#" class="social-icon">in</a>
+            </div>
+            <p class="footer-text">
+                © 2023 SalesBid. All rights reserved.<br>
+                123 Auction Street, Bidville, AU 54321<br>
+                <a href="#">Unsubscribe</a> | <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
