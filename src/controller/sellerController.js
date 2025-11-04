@@ -1,4 +1,8 @@
 const db = require('../db/database');
+const { sendEmail } = require('../services/emailService');
+const { loadTemplate } = require('../utils/templateUtils');
+
+
 
 const sellerController = {
     // Get all sellers
@@ -124,7 +128,11 @@ const sellerController = {
     },
 
     // Create a new seller
- createSeller: async (req, res) => {
+
+
+ 
+
+createSeller: async (req, res) => {
     try {
         const {
             name,
@@ -154,7 +162,6 @@ const sellerController = {
             status = 'pending'
         } = req.body;
 
-
         // Validate required fields
         if (!name || !email || !phone || !agreeTerms) {
             return res.status(400).json({
@@ -174,21 +181,20 @@ const sellerController = {
 
         // Insert the new seller
         const query = `
-  INSERT INTO sb_vendors (
-    vendor_name, email, phone_number, dob, business_type, business_name,
-    gst_number, items_category, business_description, pan_number, 
-    aadhaar_number,
-    account_holder_name, bank_account_number, bank_name, ifsc_code, agree_terms, status,
-    addressLine1, addressLine2, city, state, postalCode, country, approval_status, isactive
-  ) 
-  VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 
-    $11, $12, $13, $14, $15, $16, $17, 
-    $18, $19, $20, $21, $22, $23, $24
-  )
-  RETURNING *;
-`;
-
+            INSERT INTO sb_vendors (
+                vendor_name, email, phone_number, dob, business_type, business_name,
+                gst_number, items_category, business_description, pan_number, 
+                aadhaar_number, account_holder_name, bank_account_number, bank_name, 
+                ifsc_code, agree_terms, status, addressLine1, addressLine2, city, 
+                state, postalCode, country, approval_status, isactive
+            ) 
+            VALUES (
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 
+                $11, $12, $13, $14, $15, $16, $17, 
+                $18, $19, $20, $21, $22, $23, $24, $25
+            )
+            RETURNING *;
+        `;
 
         const values = [
             name,
@@ -207,23 +213,50 @@ const sellerController = {
             bank_name || null,
             ifsc_code || null,
             agreeTerms,
+            status,
             addressLine1,
             addressLine2,
             city,
             state,
             postalCode,
             country,
-            status,
             approval_status,
             isactive
         ];
 
         const result = await db.query(query, values);
+        const newSeller = result.rows[0];
+
+        // Send verification email
+        try {
+            // Prepare replacement data for email template
+            const replacements = {
+                'Seller Name': name,
+                'Seller Email': email,
+                'Seller Image': '<div style="color: #9CA3AF; font-size: 14px; text-align: center; padding: 60px 20px; background: #F9FAFB; border-radius: 8px;">Image will be uploaded during verification</div>',
+                'Estimated Time': '2-3 business days'
+            };
+
+            // Load and process the HTML template
+            const htmlContent = loadTemplate('seller_verify_template.html', replacements);
+
+            await sendEmail({
+                to: email,
+                subject: 'Seller Verification - Under Review',
+                text: `Hello ${name}, Thank you for submitting your details to become a verified seller with SalesBid. Your application is currently under review.`,
+                html: htmlContent
+            });
+
+            console.log(`Verification email sent to ${email}`);
+        } catch (emailError) {
+            console.error('Error sending verification email:', emailError);
+            // Email failure doesn't fail the seller creation
+        }
 
         return res.status(201).json({
             success: true,
-            message: 'Seller created successfully',
-            data: result.rows[0]
+            message: 'Seller created successfully. Verification email sent.',
+            data: newSeller
         });
 
     } catch (error) {
@@ -236,57 +269,215 @@ const sellerController = {
     }
 },
 
-    // Update seller status
-    updateSellerStatus: async (req, res) => {
-        try {
-            const { id } = req.params;
-            const { status } = req.body;
-            
-            if (!id || !status) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Seller ID and status are required'
-                });
-            }
-            
-            if (!['pending', 'approved', 'rejected', 'suspended'].includes(status)) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Invalid status value'
-                });
-            }
-            
-            const query = `
-                UPDATE sellers 
-                SET status = $1, updated_at = NOW() 
-                WHERE id = $2
-                RETURNING *
-            `;
-            
-            const result = await db.query(query, [status, id]);
-            
-            if (result.rows.length === 0) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Seller not found'
-                });
-            }
-            
-            res.status(200).json({
-                success: true,
-                message: 'Seller status updated successfully',
-                data: result.rows[0]
-            });
-            
-        } catch (error) {
-            console.error('Error updating seller status:', error);
-            res.status(500).json({
+
+
+  
+
+
+
+
+
+
+    // Helper function to send approval email
+ // Helper function to send approval email
+sendApprovalEmail: async (seller, tempPassword) => {
+    try {
+        const replacements = {
+            'Seller Name': seller.vendor_name || 'Valued Seller',
+            'Seller Email': seller.email,
+            'Password': tempPassword
+        };
+
+        const htmlContent = loadTemplate('seller_approved_template.html', replacements);
+
+        await sendEmail({
+            to: seller.email,
+            subject: '🎉 Your SalesBid Seller Account is Approved!',
+            text: `Congratulations ${seller.vendor_name}! Your seller account has been approved. Username: ${seller.email}, Temporary Password: ${tempPassword}. Please login and change your password.`,
+            html: htmlContent
+        });
+
+        console.log(`✅ Approval email sent to ${seller.email}`);
+        return true;
+    } catch (error) {
+        console.error('❌ Error sending approval email:', error);
+        return false;
+    }
+},
+
+// Helper function to send rejection email
+ // Helper function to send rejection email
+ sendRejectionEmail: async (seller, reason) => {
+     try {
+         const replacements = {
+             'Seller Name': seller.vendor_name || 'Valued Seller',
+             'Rejection Reason': reason || 'Your application does not meet our current seller requirements. Please review our guidelines and ensure all information provided is accurate and complete.'
+         };
+
+         const htmlContent = loadTemplate('seller_rejected_template.html', replacements);
+
+         await sendEmail({
+             to: seller.email,
+             subject: 'SalesBid Seller Application Status Update',
+             text: `Hello ${seller.vendor_name}, Unfortunately, we are unable to approve your seller application at this time. Reason: ${reason}`,
+             html: htmlContent
+         });
+
+         console.log(`✅ Rejection email sent to ${seller.email}`);
+         return true;
+     } catch (error) {
+         console.error('❌ Error sending rejection email:', error);
+         return false;
+     }
+ },
+
+// Main controller method
+updateSellerStatus: async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status, rejectionReason } = req.body;
+        
+        // Validation
+        if (!id || !status) {
+            return res.status(400).json({
                 success: false,
-                message: 'Failed to update seller status',
-                error: error.message
+                message: 'Seller ID and status are required'
             });
         }
-    },
+        
+        const validStatuses = ['pending', 'approved', 'rejected', 'suspended'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: `Invalid status value. Must be one of: ${validStatuses.join(', ')}`
+            });
+        }
+
+        if (status === 'rejected' && !rejectionReason) {
+            return res.status(400).json({
+                success: false,
+                message: 'Rejection reason is required when rejecting a seller'
+            });
+        }
+        
+        // Get current seller details
+        const sellerQuery = 'SELECT * FROM sb_vendors WHERE vendor_id = $1';
+        const sellerResult = await db.query(sellerQuery, [id]);
+        
+        if (sellerResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Seller not found'
+            });
+        }
+        
+        const seller = sellerResult.rows[0];
+        
+        // Check if status is already the same
+        if (seller.approval_status === status) {
+            return res.status(400).json({
+                success: false,
+                message: `Seller status is already ${status}`
+            });
+        }
+        
+        let tempPassword = null;
+        let hashedPassword = null;
+        
+        // Generate password only when approving
+        if (status === 'approved') {
+            tempPassword = generatePassword(12);
+            hashedPassword = await bcrypt.hash(tempPassword, 10);
+        }
+        
+        // Update seller status based on the new status
+        let query, values;
+        
+        switch (status) {
+            case 'approved':
+                query = `
+                    UPDATE sb_vendors 
+                    SET approval_status = $1, 
+                        status = 'active',
+                        password = $2,
+                        rejection_reason = NULL,
+                        updated_at = NOW() 
+                    WHERE vendor_id = $3
+                    RETURNING *
+                `;
+                values = [status, hashedPassword, id];
+                break;
+                
+            case 'rejected':
+                query = `
+                    UPDATE sb_vendors 
+                    SET approval_status = $1,
+                        status = 'inactive',
+                        rejection_reason = $2,
+                        updated_at = NOW() 
+                    WHERE vendor_id = $3
+                    RETURNING *
+                `;
+                values = [status, rejectionReason, id];
+                break;
+                
+            case 'suspended':
+                query = `
+                    UPDATE sb_vendors 
+                    SET approval_status = $1,
+                        status = 'inactive',
+                        updated_at = NOW() 
+                    WHERE vendor_id = $2
+                    RETURNING *
+                `;
+                values = [status, id];
+                break;
+                
+            default: // pending
+                query = `
+                    UPDATE sb_vendors 
+                    SET approval_status = $1,
+                        updated_at = NOW() 
+                    WHERE vendor_id = $2
+                    RETURNING *
+                `;
+                values = [status, id];
+        }
+        
+        const result = await db.query(query, values);
+        const updatedSeller = result.rows[0];
+        
+        // Send appropriate email based on status
+        let emailSent = false;
+        
+        if (status === 'approved') {
+            emailSent = await sendApprovalEmail(seller, tempPassword);
+        } else if (status === 'rejected') {
+            emailSent = await sendRejectionEmail(seller, rejectionReason);
+        }
+        
+        // Don't return sensitive data in response
+        const responseData = { ...updatedSeller };
+        delete responseData.password;
+        delete responseData.aadhaar_number;
+        delete responseData.pan_number;
+        
+        res.status(200).json({
+            success: true,
+            message: `Seller status updated to ${status} successfully${emailSent ? '. Notification email sent.' : ''}`,
+            data: responseData,
+            emailSent: emailSent
+        });
+        
+    } catch (error) {
+        console.error('Error updating seller status:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update seller status',
+            error: error.message
+        });
+    }
+},
 
     
 

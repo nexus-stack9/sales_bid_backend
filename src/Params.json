@@ -81,9 +81,9 @@
         "primary_key": "vendor_id"
 
 }  ,  
-        "productForm": {
-    "ui_labels": {
-        "product_id": "product_id",
+    "productForm": {
+        "ui_labels": {
+        "id": "product_id",
         "seller_id": "seller_id",
         "vendor_id": "vendor_id",
         "product_name": "product_name",

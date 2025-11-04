@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Account Approved</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Proxima+Nova:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Proxima Nova', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+            font-family: 'Proxima Nova', sans-serif;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+            font-family: 'Proxima Nova', sans-serif;
+        }
+        
+        .email-header {
+            padding: 24px 24px 16px;
+            text-align: center;
+        }
+        
+        .logo {
+            width: 140px;
+            height: auto;
+        }
+        
+        .email-body {
+            padding: 24px 30px 30px;
+            color: #1F2937;
+        }
+        
+        .success-badge {
+            background: #D1FAE5;
+            color: #065F46;
+            padding: 8px 16px;
+            border-radius: 20px;
+            display: inline-block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0 0 16px 0;
+            color: #111827;
+            line-height: 1.3;
+        }
+        
+        p {
+            font-size: 15px;
+            line-height: 1.6;
+            margin: 0 0 16px 0;
+            color: #4B5563;
+        }
+        
+        .credentials-box {
+            background: #F9FAFB;
+            border: 2px solid #10B981;
+            border-radius: 8px;
+            padding: 24px;
+            margin: 24px 0;
+        }
+        
+        .credential-item {
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #E5E7EB;
+        }
+        
+        .credential-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        
+        .credential-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #6B7280;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .credential-value {
+            display: block;
+            font-size: 16px;
+            font-weight: 600;
+            color: #111827;
+            background: #FFFFFF;
+            padding: 12px 16px;
+            border-radius: 6px;
+            border: 1px solid #E5E7EB;
+            word-break: break-all;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: #FFFFFF;
+            padding: 14px 32px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 24px 0;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .cta-button:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3);
+        }
+        
+        .info-box {
+            background: #FEF3C7;
+            border-left: 4px solid #F59E0B;
+            padding: 16px;
+            border-radius: 6px;
+            margin: 24px 0;
+        }
+        
+        .info-box p {
+            margin: 0;
+            color: #92400E;
+            font-size: 14px;
+        }
+        
+        .next-steps {
+            margin: 24px 0;
+        }
+        
+        .next-steps h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 12px;
+        }
+        
+        .next-steps ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .next-steps li {
+            font-size: 15px;
+            color: #4B5563;
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+        
+        .help-text {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #E5E7EB;
+            font-size: 14px;
+            color: #6B7280;
+        }
+        
+        .help-text p {
+            margin-bottom: 0;
+        }
+        
+        .email-footer {
+            background-color: #F9FAFB;
+            padding: 32px 24px;
+            text-align: center;
+            border-top: 1px solid #E5E7EB;
+        }
+        
+        .social-links {
+            margin-bottom: 20px;
+        }
+        
+        .social-icon {
+            display: inline-block;
+            margin: 0 8px;
+            width: 32px;
+            height: 32px;
+            background-color: #E5E7EB;
+            border-radius: 50%;
+            line-height: 32px;
+            text-align: center;
+            font-size: 16px;
+            color: #4B5563;
+            text-decoration: none;
+        }
+        
+        .footer-text {
+            font-size: 12px;
+            color: #9CA3AF;
+            max-width: 400px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+        
+        .footer-text a {
+            color: #4F46E5;
+            text-decoration: none;
+        }
+        
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 20px 10px;
+            }
+            
+            .email-body {
+                padding: 24px 20px;
+            }
+            
+            h1 {
+                font-size: 22px;
+            }
+            
+            .credentials-box {
+                padding: 20px;
+            }
+            
+            .credential-value {
+                font-size: 14px;
+                padding: 10px 12px;
+            }
+            
+            .cta-button {
+                display: block;
+                padding: 12px 24px;
+                font-size: 15px;
+            }
+            
+            .next-steps h2 {
+                font-size: 16px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .email-body {
+                padding: 20px 16px;
+            }
+            
+            h1 {
+                font-size: 20px;
+            }
+            
+            .credentials-box {
+                padding: 16px;
+            }
+            
+            .credential-label {
+                font-size: 12px;
+            }
+            
+            .credential-value {
+                font-size: 13px;
+                padding: 10px;
+            }
+            
+            .cta-button {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <img src="[LOGO_URL]" alt="SalesBid Logo" class="logo">
+        </div>
+        
+        <div class="email-body">
+            <div style="text-align: center;">
+                <span class="success-badge">✓ APPROVED</span>
+            </div>
+            
+            <h1>🎉 Congratulations! Your Seller Account is Approved</h1>
+            
+            <p>Hello <strong>[Seller Name]</strong>,</p>
+            
+            <p>We're excited to inform you that your seller account has been successfully verified and approved! You can now start listing your products and reaching thousands of buyers on SalesBid.</p>
+            
+            <div class="credentials-box">
+                <h3 style="font-size: 16px; font-weight: 600; color: #111827; margin-bottom: 16px;">Your Login Credentials</h3>
+                
+                <div class="credential-item">
+                    <span class="credential-label">Username / Email</span>
+                    <span class="credential-value">[Seller Email]</span>
+                </div>
+                
+                <div class="credential-item">
+                    <span class="credential-label">Temporary Password</span>
+                    <span class="credential-value">[Password]</span>
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <p><strong>⚠️ Important:</strong> Please change your password after your first login for security purposes.</p>
+            </div>
+            
+            <div style="text-align: center;">
+                <a href="[DOMAIN_URL]/seller/login" class="cta-button">Login to Seller Dashboard</a>
+            </div>
+            
+            <div class="next-steps">
+                <h2>Next Steps:</h2>
+                <ul>
+                    <li>Log in to your seller dashboard using the credentials above</li>
+                    <li>Complete your seller profile with additional details</li>
+                    <li>Upload your first product and start selling</li>
+                    <li>Set up your payment and shipping preferences</li>
+                    <li>Review our seller guidelines and best practices</li>
+                </ul>
+            </div>
+            
+            <p>If you have any questions or need assistance getting started, our support team is here to help!</p>
+            
+            <div class="help-text">
+                <p>Need help? Contact us at <a href="mailto:support@salesbid.com">support@salesbid.com</a> or visit our <a href="[DOMAIN_URL]/help">Help Center</a>.</p>
+            </div>
+        </div> 
+        
+        <div class="email-footer">
+            <div class="social-links">
+                <a href="#" class="social-icon">f</a>
+                <a href="#" class="social-icon">t</a>
+                <a href="#" class="social-icon">in</a>
+            </div>
+            <p class="footer-text">
+                © 2024 SalesBid. All rights reserved.<br>
+                123 Auction Street, Bidville, AU 54321<br>
+                <a href="#">Unsubscribe</a> | <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
