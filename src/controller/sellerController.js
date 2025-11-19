@@ -1,8 +1,21 @@
 const db = require('../db/database');
 const { sendEmail } = require('../services/emailService');
 const { loadTemplate } = require('../utils/templateUtils');
+const bcrypt = require('bcrypt');
 
-
+/**
+ * Generate a random password
+ * @param {number} length - Length of the password
+ * @returns {string} Generated password
+ */
+const generatePassword = (length = 12) => {
+    const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+    let password = '';
+    for (let i = 0; i < length; i++) {
+        password += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    return password;
+};
 
 const sellerController = {
     // Get all sellers
