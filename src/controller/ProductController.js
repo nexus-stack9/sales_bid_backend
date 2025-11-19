@@ -385,40 +385,81 @@ const addProduct = async (req, res) => {
             created_by,
             vendor_id,
             trending,
-            tags
+            tags,
+            condition,
+            buy_option,
+            sale_price,
+            weight,
+            height,
+            length,
+            breadth,
+            auctionstatus,
+            isactive,
+            manifest_url,
+            product_live_url,
+            live_input_id,
+            stream_key,
+            rtmp_url,
+            is_live,
+            video_path,
+            product_city,
+            product_state,
+            quantity_unit,
+            gross_weight,
+            num_boxes,
+            packaging_type,
+            box_height,
+            box_length,
+            box_breadth,
+            seller_declaration,
+            seller_id,
+            status
         } = req.body;
 
         // Validate required fields
         if (!name || !starting_price || !auction_start || !auction_end) {
             return res.status(400).json({
                 success: false,
-                message: 'Name, starting price, auction start, and auction end are required fields'
+                message: "Name, starting price, auction start, and auction end are required"
             });
         }
 
-        // Get the maximum ID from the database
-        const maxIdQuery = 'SELECT MAX(product_id) as max_id FROM products';
+        // Get max product_id
+        const maxIdQuery = "SELECT MAX(product_id) AS max_id FROM products";
         const maxIdResult = await db.query(maxIdQuery);
         const nextId = (maxIdResult.rows[0].max_id || 0) + 1;
 
-        // Insert the new product with the calculated ID
         const query = `
             INSERT INTO products (
-                product_id, name, description, starting_price, category_id,
-                auction_start, auction_end, retail_value, location,
-                shipping, quantity, image_path, created_by, vendor_id, trending, tags
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+                product_id, seller_id, name, description, starting_price,
+                category_id, auction_start, auction_end, status, retail_value,
+                location, shipping, quantity, image_path, created_by, vendor_id,
+                trending, tags, condition, buy_option, sale_price, weight, height, 
+                length, breadth, auctionstatus, isactive, manifest_url, 
+                product_live_url, live_input_id, stream_key, rtmp_url, is_live,
+                video_path, product_city, product_state, quantity_unit, gross_weight,
+                num_boxes, packaging_type, box_height, box_length, box_breadth,
+                seller_declaration
+            ) VALUES (
+                $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
+                $11,$12,$13,$14,$15,$16,$17,$18,$19,$20,
+                $21,$22,$23,$24,$25,$26,$27,$28,$29,$30,
+                $31,$32,$33,$34,$35,$36,$37,$38,$39,$40,
+                $41,$42,$43,$44
+            )
             RETURNING *
         `;
 
         const values = [
             nextId,
+            seller_id || null,
             name,
             description || null,
             starting_price,
             category_id || null,
             auction_start,
             auction_end,
+            status || "active",
             retail_value || null,
             location || null,
             shipping || null,
@@ -427,27 +468,54 @@ const addProduct = async (req, res) => {
             created_by || null,
             vendor_id || null,
             trending || false,
-            tags || null
+            tags || null,
+            condition || null,
+            buy_option || 0,
+            sale_price || null,
+            weight || null,
+            height || null,
+            length || null,
+            breadth || null,
+            auctionstatus || null,
+            isactive ?? true,
+            manifest_url || null,
+            null, // product_live_url
+            null, // live_input_id
+            null, // stream_key
+            null, // rtmp_url
+            is_live ?? false,
+            video_path || null,
+            product_city || null,
+            product_state || null,
+            quantity_unit || null,
+            gross_weight || null,
+            num_boxes || null,
+            packaging_type || null,
+            box_height || null,
+            box_length || null,
+            box_breadth || null,
+            seller_declaration ?? false
         ];
 
         const result = await db.query(query, values);
 
         return res.status(201).json({
             success: true,
-            message: 'Product added successfully',
+            message: "Product added successfully",
             data: result.rows[0],
-            id: nextId // Return the created ID explicitly
+            id: nextId
         });
 
     } catch (error) {
-        console.error('Error adding product:', error);
+        console.error("Error adding product:", error);
         return res.status(500).json({
             success: false,
-            message: 'Failed to add product',
+            message: "Failed to add product",
             error: error.message
         });
     }
 };
+
 
 // API Controllers for Wishlist
 
