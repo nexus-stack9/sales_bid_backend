@@ -4,11 +4,15 @@ require('dotenv').config();
 const CryptoJS = require("crypto-js");
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
+const fs = require('fs');
+const path = require('path');
 
 const {
   generateAccessToken,
   generateRefreshToken,
 } = require("../config/jwtConfig");
+
+const { sendOtp, verifyOtp } = require('../services/TwoFactorService');
 
 function encryptPassword(password) {
   const secretKey = process.env.SECRET_KEY;
@@ -26,14 +30,34 @@ const registerUser = async (req, res) => {
   }
 
   try {
-    // Encrypt the password before storing
-    // const encryptedPassword = encryptPassword(password);
+    // Check if user exists and is verified
+    const existingUser = await db.query(
+      'SELECT * FROM users WHERE email = $1',
+      [email]
+    );
 
+    if (existingUser.rows.length > 0) {
+      if (existingUser.rows[0].is_email_verified) {
+        // If they are verified but we are here, it means they might be trying to register again
+        // or the placeholder was already updated.
+        // If first_name is NOT 'Pending', they are fully registered.
+        if (existingUser.rows[0].first_name !== 'Pending') {
+           return res.status(409).json({ error: 'Email already exists.' });
+        }
+      } else {
+        return res.status(403).json({ error: 'Email not verified. Please verify your email first.' });
+      }
+    } else {
+      return res.status(403).json({ error: 'Email not verified. Please verify your email first.' });
+    }
+
+    // Update the placeholder user with actual data
     const result = await db.query(
-      `INSERT INTO users (first_name, last_name, email, phone, password_hash)
-       VALUES ($1, $2, $3, $4, $5)
+      `UPDATE users 
+       SET first_name = $1, last_name = $2, phone = $3, password_hash = $4
+       WHERE email = $5
        RETURNING user_id, email, first_name, last_name, role, created_at`,
-      [firstName, lastName, email, phone, password]
+      [firstName, lastName, phone, password, email]
     );
 
     res.status(201).json({
@@ -211,7 +235,7 @@ function decryptPassword(encryptedPassword) {
 
 function decryptPassword(encryptedPassword) {
   try {
-    const secretKey = process.env.SECRET_KEY;
+    const secretKey = process.env.MFA_SECRET_KEY;
     if (!secretKey) {
       console.error('SECRET_KEY is not configured');
       return null;
@@ -340,5 +364,203 @@ const loginWithGoogle = async (req, res) => {
   }
 };
 
+const sendLoginOtp = async (req, res) => {
+  const { phone } = req.body;
 
-module.exports = { registerUser, signin, loginWithGoogle, vendorSignin };
+  if (!phone) {
+    return res.status(400).json({ error: 'Phone number is required.' });
+  }
+
+  try {
+    // Check if user exists with this phone number
+    const result = await db.query(
+      'SELECT * FROM users WHERE phone = $1',
+      [phone]
+    );
+
+    const user = result.rows[0];
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found with this phone number.' });
+    }
+
+    const otpResponse = await sendOtp(phone);
+
+    if (otpResponse.Status === 'Success') {
+      res.status(200).json({
+        message: 'OTP sent successfully',
+        sessionId: otpResponse.Details
+      });
+    } else {
+      res.status(500).json({ error: 'Failed to send OTP' });
+    }
+
+  } catch (error) {
+    console.error('Error sending login OTP:', error);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+};
+
+const verifyLoginOtp = async (req, res) => {
+  const { phone, otp, sessionId } = req.body;
+
+  if (!phone || !otp || !sessionId) {
+    return res.status(400).json({ error: 'Phone, OTP, and Session ID are required.' });
+  }
+
+  try {
+    const verificationResponse = await verifyOtp(sessionId, otp);
+
+    if (verificationResponse.Status === 'Success' && verificationResponse.Details === 'OTP Matched') {
+       // OTP is valid, log the user in
+       const result = await db.query(
+        'SELECT * FROM users WHERE phone = $1',
+        [phone]
+      );
+  
+      const user = result.rows[0];
+  
+      if (!user) {
+        // This shouldn't happen if sendLoginOtp checks for user, but good to be safe
+        return res.status(404).json({ error: 'User not found.' });
+      }
+
+      const token = jwt.sign(
+        {
+          userId: user.user_id,
+          email: user.email,
+          role: user.role
+        },
+        process.env.JWT_SECRET_KEY,
+        { expiresIn: '7d' }
+      );
+  
+      res.status(200).json({
+        message: 'Login successful',
+        token,
+        user: {
+          userId: user.user_id,
+          email: user.email,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          role: user.role
+        }
+      });
+
+    } else {
+      res.status(400).json({ error: 'Invalid OTP' });
+    }
+
+  } catch (error) {
+    console.error('Error verifying login OTP:', error);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+};
+
+const sendRegistrationOtp = async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required.' });
+  }
+
+  try {
+    // Check if user exists
+    const userResult = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+    let user = userResult.rows[0];
+
+    if (user && user.is_email_verified && user.first_name !== 'Pending') {
+      return res.status(409).json({ error: 'Email already registered.' });
+    }
+
+    if (!user) {
+      // Create placeholder user
+      const insertResult = await db.query(
+        "INSERT INTO users (email, first_name, is_email_verified) VALUES ($1, 'Pending', false) RETURNING *",
+        [email]
+      );
+      user = insertResult.rows[0];
+    }
+
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiryTime = new Date();
+    expiryTime.setMinutes(expiryTime.getMinutes() + 10);
+
+    // Encrypt OTP
+    const encryptedOTP = CryptoJS.AES.encrypt(otp, process.env.SECRET_KEY).toString();
+
+    // Store in otp_tokens
+    await db.query(
+      `INSERT INTO otp_tokens (user_id, token, expires_at)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (user_id) 
+       DO UPDATE SET token = $2, expires_at = $3, created_at = NOW()`,
+      [user.user_id, encryptedOTP, expiryTime]
+    );
+
+    // Send Email
+    const templatePath = path.join(__dirname, '../templates/registration-otp-template.html');
+    let emailTemplate = fs.readFileSync(templatePath, 'utf8');
+    emailTemplate = emailTemplate.replace('123456', otp);
+
+    const { sendEmail } = require('../services/emailService');
+    await sendEmail({
+      to: email,
+      subject: 'Email Verification Code',
+      text: `Your verification code is: ${otp}`,
+      html: emailTemplate
+    });
+
+    res.status(200).json({ message: 'Verification code sent to email.' });
+  } catch (error) {
+    console.error('Send registration OTP error:', error);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+};
+
+const verifyRegistrationOtp = async (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) {
+    return res.status(400).json({ error: 'Email and OTP are required.' });
+  }
+
+  try {
+    const userResult = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+    const user = userResult.rows[0];
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    const otpResult = await db.query('SELECT * FROM otp_tokens WHERE user_id = $1', [user.user_id]);
+    const tokenRecord = otpResult.rows[0];
+
+    if (!tokenRecord) {
+      return res.status(400).json({ error: 'OTP not found or expired.' });
+    }
+
+    if (new Date() > new Date(tokenRecord.expires_at)) {
+      return res.status(400).json({ error: 'OTP expired.' });
+    }
+
+    // Decrypt and compare
+    const bytes = CryptoJS.AES.decrypt(tokenRecord.token, process.env.SECRET_KEY);
+    const decryptedOTP = bytes.toString(CryptoJS.enc.Utf8);
+
+    if (decryptedOTP !== otp) {
+      return res.status(400).json({ error: 'Invalid OTP.' });
+    }
+
+    // Mark as verified
+    await db.query('UPDATE users SET is_email_verified = true WHERE user_id = $1', [user.user_id]);
+    // Optional: Delete OTP token after successful verification
+    await db.query('DELETE FROM otp_tokens WHERE user_id = $1', [user.user_id]);
+
+    res.status(200).json({ message: 'Email verified successfully.' });
+  } catch (error) {
+    console.error('Verify registration OTP error:', error);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+};
+
+module.exports = { registerUser, signin, loginWithGoogle, vendorSignin, sendLoginOtp, verifyLoginOtp, sendRegistrationOtp, verifyRegistrationOtp };
