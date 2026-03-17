@@ -118,6 +118,7 @@
         "weight": "weight",
         "height": "height",
         "length": "length",
+        "rejection_reason": "rejection_reason",
 
         "breadth": "breadth",
         "auctionstatus": "auctionstatus",
@@ -163,6 +164,7 @@
         "weight": "weight",
         "height": "height",
         "length": "length",
+        "rejection_reason": "rejection_reason",
         "breadth": "breadth",      
         "auctionstatus": "auctionstatus",
         "isactive": "isactive",
