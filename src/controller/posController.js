@@ -16,10 +16,8 @@ function encryptPassword(password) {
 const getAllProductsByVendorId = async (req, res) => {
   try {
     const { vendorId } = req.params;
+    const filters = req.query;
 
-    console.log("Fetching products for vendorId:", vendorId);
-
-    // Step 1: Check if the vendor is admin
     const adminCheck = await pool.query(
       "SELECT is_admin FROM sb_vendors WHERE vendor_id = $1",
       [vendorId]
@@ -30,32 +28,44 @@ const getAllProductsByVendorId = async (req, res) => {
     }
 
     const isAdmin = adminCheck.rows[0].is_admin;
-    console.log("Is Admin:", isAdmin);
 
-    // Step 2: Build query based on admin status
-    let queryText;
-    let queryParams = [];
+    let queryText = "SELECT * FROM vw_get_product_details";
+    let conditions = [];
+    let values = [];
+    let index = 1;
 
-    if (isAdmin) {
-      // Super admin -> get all products
-      queryText = "SELECT * FROM vw_get_product_details";
-    } else {
-      // Regular vendor -> only their products
-      queryText = "SELECT * FROM vw_get_product_details WHERE vendor_id = $1";
-      queryParams = [vendorId];
+    // vendor restriction
+    if (!isAdmin) {
+      conditions.push(`vendor_id = $${index}`);
+      values.push(vendorId);
+      index++;
     }
 
-    const result = await pool.query(queryText, queryParams);
-    console.log("Query result:", result.rows);
+    // dynamic filters
+    for (const key in filters) {
+      conditions.push(`${key} = $${index}`);
+      values.push(filters[key]);
+      index++;
+    }
 
-    // ✅ Always return 200 with array (empty or with data)
+    if (conditions.length > 0) {
+      queryText += " WHERE " + conditions.join(" AND ");
+    }
+
+    console.log("Final Query:", queryText);
+    console.log("Values:", values);
+
+    const result = await pool.query(queryText, values);
+
     res.status(200).json(result.rows);
 
   } catch (error) {
-    console.error("Error fetching products by vendorId:", error);
+    console.error("Error fetching products:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++VENDOR CONTROLLER+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -214,83 +224,129 @@ const getAllOrderByVendorId = async (req, res) => {
     if (isAdmin) {
       // Super admin -> get all orders with details
       queryText = `
-        SELECT 
-          o.*,
-          p.name as product_name,
-          p.image_path,
-          p.category_id,
-          p.quantity,
-          pc.name as category,
-          sv.vendor_name as seller_name,
-          sv.pincode as seller_pincode,
-          bu.first_name || ' ' || COALESCE(bu.last_name, '') as buyer_name,
-          bu.email as buyer_email,
-          bu.phone as buyer_phone,
-          bu.address as buyer_address,
-          bu.city as buyer_city,
-          bu.state as buyer_state,
-          bu.pincode as buyer_pincode,
-          COALESCE(
-            (SELECT jsonb_agg(
-              jsonb_build_object(
-                'bidder_id', b.bidder_id,
-                'user_name', u.first_name,
-                'bid_amount', b.bid_amount,
-                'bid_time', b.bid_time
-              )
+  SELECT 
+    o.*,
+    p.name AS product_name,
+    p.image_path,
+    p.category_id,
+    p.quantity,
+    pc.name AS category,
+    sv.vendor_name AS seller_name,
+    sv.pincode AS seller_pincode,
+
+    -- Buyer basic details
+    bu.first_name || ' ' || COALESCE(bu.last_name, '') AS buyer_name,
+    bu.email AS buyer_email,
+    bu.phone AS buyer_phone,
+
+    -- ✅ Address from addresses table
+    COALESCE(a.street, '') || 
+    CASE WHEN a.city IS NOT NULL THEN ', ' || a.city ELSE '' END ||
+    CASE WHEN a.state IS NOT NULL THEN ', ' || a.state ELSE '' END ||
+    CASE WHEN a.postal_code IS NOT NULL THEN ' - ' || a.postal_code ELSE '' END
+    AS buyer_address,
+
+    a.city AS buyer_city,
+    a.state AS buyer_state,
+    a.postal_code AS buyer_pincode,
+
+    -- Bids JSON
+    COALESCE(
+        (
+            SELECT jsonb_agg(
+                jsonb_build_object(
+                    'bidder_id', b.bidder_id,
+                    'user_name', u.first_name,
+                    'bid_amount', b.bid_amount,
+                    'bid_time', b.bid_time
+                )
             )
             FROM bids b
             LEFT JOIN users u ON b.bidder_id = u.user_id
             WHERE b.product_id = o.product_id
-            ), '[]'::jsonb
-          ) as bids
-        FROM orders o
-        LEFT JOIN products p ON o.product_id = p.product_id
-        LEFT JOIN product_categories pc ON p.category_id = pc.category_id
-        LEFT JOIN sb_vendors sv ON o.seller_id = sv.vendor_id
-        LEFT JOIN users bu ON o.buyer_id = bu.user_id
-        ORDER BY o.order_date DESC
+        ), 
+        '[]'::jsonb
+    ) AS bids
+
+FROM orders o
+LEFT JOIN products p ON o.product_id = p.product_id
+LEFT JOIN product_categories pc ON p.category_id = pc.category_id
+LEFT JOIN sb_vendors sv ON o.seller_id = sv.vendor_id
+LEFT JOIN users bu ON o.buyer_id = bu.user_id
+
+-- ✅ IMPORTANT JOIN (this was missing)
+LEFT JOIN LATERAL (
+    SELECT *
+    FROM addresses a
+    WHERE a.user_id = bu.user_id
+    ORDER BY a.is_primary DESC, a.created_at DESC
+    LIMIT 1
+) a ON true
+
+ORDER BY o.order_date DESC;
       `;
     } else {
       // Regular vendor -> only their orders with details
       queryText = `
         SELECT 
-          o.*,
-          p.name as product_name,
-          p.image_path,
-          p.category_id,
-          p.quantity,
-          pc.name as category,
-          sv.vendor_name as seller_name,
-          sv.pincode as seller_pincode,
-          bu.first_name || ' ' || COALESCE(bu.last_name, '') as buyer_name,
-          bu.email as buyer_email,
-          bu.phone as buyer_phone,
-          bu.address as buyer_address,
-          bu.city as buyer_city,
-          bu.state as buyer_state,
-          bu.pincode as buyer_pincode,
-          COALESCE(
-            (SELECT jsonb_agg(
-              jsonb_build_object(
-                'bidder_id', b.bidder_id,
-                'user_name', u.first_name,
-                'bid_amount', b.bid_amount,
-                'bid_time', b.bid_time
-              )
+    o.*,
+    p.name AS product_name,
+    p.image_path,
+    p.category_id,
+    p.quantity,
+    pc.name AS category,
+    sv.vendor_name AS seller_name,
+    sv.pincode AS seller_pincode,
+
+    -- Buyer basic details
+    bu.first_name || ' ' || COALESCE(bu.last_name, '') AS buyer_name,
+    bu.email AS buyer_email,
+    bu.phone AS buyer_phone,
+
+    -- Address from addresses table
+    COALESCE(a.street, '') || 
+    CASE WHEN a.city IS NOT NULL THEN ', ' || a.city ELSE '' END ||
+    CASE WHEN a.state IS NOT NULL THEN ', ' || a.state ELSE '' END ||
+    CASE WHEN a.postal_code IS NOT NULL THEN ' - ' || a.postal_code ELSE '' END
+    AS buyer_address,
+
+    a.city AS buyer_city,
+    a.state AS buyer_state,
+    a.postal_code AS buyer_pincode,
+
+    -- Bids JSON
+    COALESCE(
+        (
+            SELECT jsonb_agg(
+                jsonb_build_object(
+                    'bidder_id', b.bidder_id,
+                    'user_name', u.first_name,
+                    'bid_amount', b.bid_amount,
+                    'bid_time', b.bid_time
+                )
             )
             FROM bids b
             LEFT JOIN users u ON b.bidder_id = u.user_id
             WHERE b.product_id = o.product_id
-            ), '[]'::jsonb
-          ) as bids
-        FROM orders o
-        LEFT JOIN products p ON o.product_id = p.product_id
-        LEFT JOIN product_categories pc ON p.category_id = pc.category_id
-        LEFT JOIN sb_vendors sv ON o.seller_id = sv.vendor_id
-        LEFT JOIN users bu ON o.buyer_id = bu.user_id
-        WHERE o.seller_id = $1
-        ORDER BY o.order_date DESC
+        ), 
+        '[]'::jsonb
+    ) AS bids
+
+FROM orders o
+LEFT JOIN products p ON o.product_id = p.product_id
+LEFT JOIN product_categories pc ON p.category_id = pc.category_id
+LEFT JOIN sb_vendors sv ON o.seller_id = sv.vendor_id
+LEFT JOIN users bu ON o.buyer_id = bu.user_id
+
+-- Address join
+LEFT JOIN addresses a 
+    ON bu.user_id = a.user_id 
+    AND a.is_primary = true
+
+-- ✅ Seller filter
+WHERE o.seller_id = $1
+
+ORDER BY o.order_date DESC;
       `;
       queryParams = [vendorId];
     }
