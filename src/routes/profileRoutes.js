@@ -3,7 +3,7 @@ const router = express.Router();
 const { check } = require('express-validator');
 const multer = require('multer');
 const { updateProfile, updatePassword, getProfileDetails, getUserCounts, getUserOrders } = require('../controller/profileController');
-const authMiddleware = require('../middleware/authMiddleware');
+const { authMiddleware } = require('../middleware/authMiddleware');
 
 // Configure multer for memory storage
 const storage = multer.memoryStorage();

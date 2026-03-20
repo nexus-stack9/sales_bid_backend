@@ -1,11 +1,11 @@
 const bcrypt = require('bcrypt');
 const db = require('../db/database');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(process.cwd(), '.env') });
 const CryptoJS = require("crypto-js");
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const fs = require('fs');
-const path = require('path');
 
 const {
   generateAccessToken,
@@ -216,26 +216,6 @@ const vendorSignin = async (req, res) => {
 function decryptPassword(encryptedPassword) {
   try {
     const secretKey = process.env.SECRET_KEY;
-    if (!secretKey) {
-      console.error('SECRET_KEY is not configured');
-      return null;
-    }
-    if (!encryptedPassword) {
-      console.error('No encrypted password provided');
-      return null;
-    }
-    const bytes = CryptoJS.AES.decrypt(encryptedPassword, secretKey);
-    return bytes.toString(CryptoJS.enc.Utf8);
-  } catch (error) {
-    console.error('Decryption error:', error);
-    return null;
-  }
-}
-
-
-function decryptPassword(encryptedPassword) {
-  try {
-    const secretKey = process.env.MFA_SECRET_KEY;
     if (!secretKey) {
       console.error('SECRET_KEY is not configured');
       return null;

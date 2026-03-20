@@ -37,6 +37,7 @@ app.use(bodyParser.json());
 app.use("/api", require("./routes/router"));
 app.use("/sellers", require("./routes/sellerRoutes"));
 app.use('/auth', require('./routes/loginRoutes'));
+app.use('/auth/vendor-password', require('./routes/vendorPasswordResetRoutes'));
 app.use('/file', require('./routes/fileRoutes'));
 app.use('/password', require('./routes/passwordResetRoutes')); // Add password reset routes
 app.use('/profile', require('./routes/profileRoutes')); 
