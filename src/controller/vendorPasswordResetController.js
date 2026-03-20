@@ -23,6 +23,19 @@ const decryptPassword = (encryptedPassword) => {
   }
 };
 
+const encryptPassword = (password) => {
+  try {
+    const secretKey = process.env.SECRET_KEY;
+    if (!secretKey || !password) {
+      return null;
+    }
+    return CryptoJS.AES.encrypt(password, secretKey).toString();
+  } catch (error) {
+    console.error('Encryption error:', error);
+    return null;
+  }
+};
+
 const requestVendorPasswordReset = async (req, res) => {
   const { email } = req.body;
 
@@ -120,9 +133,14 @@ const verifyVendorOTPAndResetPassword = async (req, res) => {
       return res.status(400).json({ error: 'Invalid password reset code.' });
     }
 
+    const encryptedPassword = encryptPassword(newPassword);
+    if (!encryptedPassword) {
+      return res.status(500).json({ error: 'Error encrypting password.' });
+    }
+
     await db.query(
       'UPDATE sb_vendors SET password = $1 WHERE vendor_id = $2',
-      [newPassword, vendor.vendor_id]
+      [encryptedPassword, vendor.vendor_id]
     );
 
     await db.query(
@@ -168,9 +186,14 @@ const changeVendorPassword = async (req, res) => {
       return res.status(401).json({ error: 'Current password is incorrect.' });
     }
 
+    const encryptedPassword = encryptPassword(newPassword);
+    if (!encryptedPassword) {
+      return res.status(500).json({ error: 'Error encrypting password.' });
+    }
+
     await db.query(
       'UPDATE sb_vendors SET password = $1 WHERE vendor_id = $2',
-      [newPassword, vendorId]
+      [encryptedPassword, vendorId]
     );
 
     res.status(200).json({ message: 'Password changed successfully.' });
