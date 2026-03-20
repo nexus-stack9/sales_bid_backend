@@ -4,7 +4,8 @@ const { insertBid,getBidById, userBids } = require('../controller/BidController'
 
 // Route to insert a new bid
 router.post('/placeBid', insertBid);
-router.get('/userBids/:bidder_id', userBids);getBidById
+router.get('/userBids/:bidder_id', userBids);
+router.get('/getBidById/:bidder_id', getBidById);
 router.get('/getBidById/:bidder_id', getBidById);
 
 
